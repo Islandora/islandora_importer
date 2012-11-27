@@ -15,13 +15,15 @@ class ZipBatchImporter extends IslandoraBatchImporter {
 
   public static function get_form(&$form_state) {
     // Get the list of valid content models.
-    $parent = islandora_object_load($form_state['storage']['parent_pid']);
-    module_load_include('ingest.inc', 'islandora', 'includes/islandora');
-    $parent_info = islandora_ingest_get_information($parent);
+    $parent = islandora_get_object_by_id($form_state['storage']['parent_pid']);
+
+    $policy = new CollectionPolicy($parent);
 
     $cm_options = array();
-    $ns_options = array();
-    foreach ($parent_info['models'] as $pid => $info) {
+    $ns_options = array(
+      NULL => t('Default namespace'),
+    );
+    foreach ($policy->getModels() as $pid => $info) {
       $cm_options[$pid] = array('title' => $info['name']);
 
       $cm_namespace = $info['namespace'];
@@ -58,7 +60,6 @@ class ZipBatchImporter extends IslandoraBatchImporter {
             '#header' => array('title' => t('Name')),
             '#multiple' => TRUE,
             '#options' => $cm_options,
-            '#required' => TRUE,
           ),
         ),
         'namespace' => array(
@@ -84,11 +85,7 @@ class ZipBatchImporter extends IslandoraBatchImporter {
       }
     }
 
-    if (!(count($form_state['values']['content_model']) > 0)) {
-      drupal_set_message(t('Must select at least one content model!'));
-    }
-
-    return !empty($form_state['storage']['file']) && (count($form_state['values']['content_model']) > 0);
+    return !empty($form_state['storage']['file']);
   }
 
   public static function get_batch_info(&$form_state) {
@@ -96,7 +93,8 @@ class ZipBatchImporter extends IslandoraBatchImporter {
      $file = file_load($form_state['values']['file']);
 
      // Grab the content models.
-     $content_models = $form_state['values']['content_model'];
+     // Cast to an array, in case there are none?
+     $content_models = (array)$form_state['values']['content_model'];
 
      $info = array(
        'file' => $file,
@@ -149,7 +147,7 @@ class ZipBatchImportObject extends IslandoraImportObject {
   protected function __construct($source) {
     parent::__construct($source);
     $this->pid_namespace = $this->source['pid_namespace'];
-    $this->content_model = $this->source['content_model'];
+    $this->content_model = (array)$this->source['content_model'];
   }
 
   public static function get_one(&$info) {
@@ -170,7 +168,6 @@ class ZipBatchImportObject extends IslandoraImportObject {
   protected function get_datastreams(&$errors = NULL, &$files = NULL) {
     $to_return = parent::get_datastreams($errors, $files);
 
-    module_load_include('inc', 'islandora', 'includes/mime.detect');
     $mime_detect = new MimeDetect();
 
     module_load_include('inc', 'islandora', 'includes/datastream');
