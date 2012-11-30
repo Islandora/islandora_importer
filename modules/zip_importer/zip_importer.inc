@@ -15,7 +15,7 @@ class ZipBatchImporter extends IslandoraBatchImporter {
 
   public static function get_form(&$form_state) {
     // Get the list of valid content models.
-    $parent = islandora_get_object_by_id($form_state['storage']['parent_pid']);
+    $parent = islandora_object_load($form_state['storage']['parent_pid']);
 
     $cm_options = array();
     $ns_options = array(
@@ -29,7 +29,7 @@ class ZipBatchImporter extends IslandoraBatchImporter {
       $ns_options = array(
 	NULL => t('Default namespace'),
       );
-      foreach ($policy->getModels() as $pid => $info) {
+      foreach ($policy->getContentModels() as $pid => $info) {
 	$cm_options[$pid] = array('title' => $info['name']);
 
 	$cm_namespace = $info['namespace'];
