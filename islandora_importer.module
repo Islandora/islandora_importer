@@ -17,6 +17,15 @@ function islandora_importer_menu() {
 }
 
 /**
+ * Implements hook_admin_paths().
+ */
+function islandora_importer_admin_paths() {
+  return array(
+    'islandora/object/*/manage/collection/batch_import' => TRUE,
+  );
+}
+
+/**
  * Wrap a module_invoke_all() call.
  */
 function islandora_importer_get_options() {
@@ -33,23 +42,6 @@ function islandora_importer_access_callback($object) {
 
   return ((count(islandora_importer_get_options()) > 0) &&
     user_access(FEDORA_INGEST));
-}
-
-/**
- * Implements hook_islandora_ingest_registry().
- */
-function islandora_importer_islandora_ingest_registry($object) {
-  $reg = array();
-  
-  if (count(islandora_importer_get_options()) > 0) {
-    $reg[] = array(
-      'name' => 'Batch Import',
-      'url' => "islandora/object/{$object->id}/import",
-      'weight' => 1,
-    );
-  }
-
-  return $reg;
 }
 
 /**
