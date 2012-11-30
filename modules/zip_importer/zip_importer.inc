@@ -17,21 +17,28 @@ class ZipBatchImporter extends IslandoraBatchImporter {
     // Get the list of valid content models.
     $parent = islandora_get_object_by_id($form_state['storage']['parent_pid']);
 
-    $policy = new CollectionPolicy($parent);
-
     $cm_options = array();
     $ns_options = array(
       NULL => t('Default namespace'),
     );
-    foreach ($policy->getModels() as $pid => $info) {
-      $cm_options[$pid] = array('title' => $info['name']);
+    if (isset($parent['COLLECTION_POLICY'])) {
+      $policy_stream = $parent['COLLECTION_POLICY'];
+      $policy = new CollectionPolicy($policy_stream->content);
 
-      $cm_namespace = $info['namespace'];
-      if (!empty($cm_namespace)) {
-        $cm_namespace = $info['namespace'];
-        $cm_namespace = explode(':', $info['namespace']);
-        $namespace = trim($cm_namespace[0]);
-        $ns_options[$namespace] = $namespace;
+      $cm_options = array();
+      $ns_options = array(
+	NULL => t('Default namespace'),
+      );
+      foreach ($policy->getModels() as $pid => $info) {
+	$cm_options[$pid] = array('title' => $info['name']);
+
+	$cm_namespace = $info['namespace'];
+	if (!empty($cm_namespace)) {
+	  $cm_namespace = $info['namespace'];
+	  $cm_namespace = explode(':', $info['namespace']);
+	  $namespace = trim($cm_namespace[0]);
+	  $ns_options[$namespace] = $namespace;
+	}
       }
     }
 

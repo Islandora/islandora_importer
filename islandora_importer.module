@@ -7,11 +7,12 @@ function islandora_importer_menu() {
   return array(
     'islandora/object/%islandora_object/import' => array(
       'title' => 'Batch Import',
-      'type' => MENU_CALLBACK,
+      'type' => MENU_LOCAL_ACTION,
       'page callback' => 'drupal_get_form',
       'page arguments' => array('islandora_importer_form', 2),
       'access callback' => 'islandora_importer_access_callback',
       'access arguments' => array(2),
+      'tab parent' => 'islandora/object/%islandora_object/manage/collection',
     ),
   );
 }
