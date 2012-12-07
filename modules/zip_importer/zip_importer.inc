@@ -101,7 +101,7 @@ class ZipBatchImporter extends IslandoraBatchImporter {
 
      // Grab the content models.
      // Cast to an array, in case there are none?
-     $content_models = (array)$form_state['values']['content_model'];
+     $content_models = array_filter((array)$form_state['values']['content_model']);
 
      $info = array(
        'file' => $file,
@@ -177,8 +177,8 @@ class ZipBatchImportObject extends IslandoraImportObject {
 
     $mime_detect = new MimeDetect();
 
-    module_load_include('inc', 'islandora', 'includes/datastream');
-    $dsids = islandora_get_dsids($this->source['content_model']);
+    module_load_include('inc', 'islandora', 'includes/utilities');
+    $dsids = islandora_get_datastreams_requirements_from_models((array)$this->source['content_model']);
 
     foreach ($this->source['object_info'] as $datastream => $name) {
       if ($datastream == 'xml') {
@@ -192,8 +192,8 @@ class ZipBatchImportObject extends IslandoraImportObject {
       $mimetype = $mime_detect->getMimetype($name);
       
       $dsid = strtoupper($datastream);
-      foreach ($dsids as $ds => $mimes) {
-        if (in_array($mimetype, $mimes)) {
+      foreach ($dsids as $ds => $info) {
+        if (in_array($mimetype, $info['mime'])) {
           $dsid = $ds;
           break;
         }
@@ -211,7 +211,7 @@ class ZipBatchImportObject extends IslandoraImportObject {
             'dsid' => $dsid,
             'label' => "$dsid datastream",
             'mimetype' => $mimetype,
-            'datastream_file' => "public://$name",
+            'datastream_file' => file_create_url($file->uri),
             'control_group' => 'M',
           ),
         );

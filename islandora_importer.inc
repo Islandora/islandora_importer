@@ -343,7 +343,7 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
    *
    * @return array
    *   The array of datastreams as used by
-   *   islandora_ingest_new_object_prepare().
+   *   islandora_prepare_new_object().
    */
   protected function get_datastreams(&$errors = NULL, &$files = NULL) {
     $datastreams = array();
@@ -351,12 +351,14 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
     //Ingest the MODS.
     $obtained_mods = $this->get_mods();
     if ($obtained_mods) {
+      $name = file_create_filename('MODS record.xml', 'public://');
+      $files[] = $file = file_save_data($obtained_mods, $name);
       $datastreams[] = array(
         'dsid' => 'MODS',
         'label' => 'MODS Record',
         'mimetype' => 'text/xml',
         'control_group' => 'X',
-        'datastream_content' => $obtained_mods,
+        'datastream_file' => file_create_url($file->uri),
       );
     }
     else {
@@ -368,12 +370,14 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
     //Ingest the DC second (
     $obtained_dc = $this->get_dc();
     if ($obtained_dc) {
+      $name = file_create_filename('DC record.xml', 'public://');
+      $files[] = $file = file_save_data($obtained_dc, $name);
       $datastreams[] = array(
         'dsid' => 'DC',
         'label' => 'DC Record',
         'mimetype' => 'text/xml',
         'control_group' => 'X',
-        'datastream_content' => $obtained_dc,
+        'datastream_file' => file_create_url($file->uri),
       );
     }
     else {
@@ -423,10 +427,10 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
       'pid' => $parent_pid,
     );
 
-    $object = islandora_ingest_new_object_prepare($pid, $label,
+    $object = islandora_prepare_new_object($pid, $label,
       $datastreams, $content_models, $relationships, $collection_pid);
 
-    $object = islandora_ingest_add_object($object);
+    $object = islandora_add_object($object);
 
     foreach ($files as $file) {
       if ($file) {
@@ -489,6 +493,6 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
     $processor->importStylesheet($xsl);
 
     // XXX: Suppressing warnings regarding unregistered prefixes.
-    return @$processor->transformToXML($input);
+    return $processor->transformToXML($input);
   }
 }
