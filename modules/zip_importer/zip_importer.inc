@@ -86,7 +86,9 @@ class ZipBatchImporter extends IslandoraBatchImporter {
 
   public static function ready_for_batch(&$form_state) {
     if (empty($form_state['storage']['file'])) {
-      $file = file_save_upload('file');
+      // Deal with the managed upload.
+      $file = file_load($form_state['values']['file']);
+
       if ($file) {
         $form_state['storage']['file'] = $file;
       }
@@ -97,11 +99,11 @@ class ZipBatchImporter extends IslandoraBatchImporter {
 
   public static function get_batch_info(&$form_state) {
      // Load the file.
-     $file = file_load($form_state['values']['file']);
+     $file = $form_state['storage']['file'];
 
      // Grab the content models.
      // Cast to an array, in case there are none?
-     $content_models = (array)$form_state['values']['content_model'];
+     $content_models = array_filter((array)$form_state['values']['content_model']);
 
      $info = array(
        'file' => $file,
@@ -130,7 +132,7 @@ class ZipBatchImporter extends IslandoraBatchImporter {
       $path_info = pathinfo($name);
 
       $object_key = $path_info['dirname'] . '-_-' . $path_info['filename'];
-      if (strpos($path_info['dirname'], '__MACOSX/') === FALSE && isset($path_info['extension'])) {
+      if (strpos($path_info['dirname'], '__MACOSX') === FALSE && isset($path_info['extension'])) {
         $datastream_key = strtolower($path_info['extension']);
         $info[$object_key][$datastream_key] = $name;
       }
@@ -172,18 +174,58 @@ class ZipBatchImportObject extends IslandoraImportObject {
       new self($record)); //XXX:  Be careful with "self"?  PHP is odd.
   }
 
+  /**
+   * Determine the datastream ID for the given file.
+   *
+   * @return string
+   *   The string 'OBJ'. Was trying to match the mimetype against what the
+   *   DS-COMPOSITE-MODEL indicates is valid...  Some issues, though... See the
+   *   in-code comments for a bit more info.
+   */
+  protected function determine_dsid($name, $extension) {
+    /*
+     * Something like this would be nice to have...  Need a way to indicate
+     *   primary assets, though...  Think about basic image, where the content
+     *   model can contain "OBJ" image/jpeg, "TN" image/jpeg and so on...
+     *   
+
+    static $mime_detect = new MimeDetect(), 
+      $dsids = NULL;
+
+    if ($dsids === NULL) {
+      module_load_include('inc', 'islandora', 'includes/utilities');
+      $dsids = islandora_get_datastreams_requirements_from_models((array)$this->source['content_model']);
+    }
+
+    // Determine which stream this should be...  Uses the first matching, as
+    //  as received from the DC-COMPOSITE.
+    $mimetype = $mime_detect->getMimetype($name);
+
+    $dsid = strtoupper($extension);
+    foreach ($dsids as $ds => $info) {
+      if (in_array($mimetype, $info['mime'])) {
+	$dsid = $ds;
+	break;
+      }
+    }
+
+    return $dsid;*/
+
+    return 'OBJ';
+  }
+
   protected function get_datastreams(&$errors = NULL, &$files = NULL) {
     $to_return = parent::get_datastreams($errors, $files);
 
     $mime_detect = new MimeDetect();
 
-    module_load_include('inc', 'islandora', 'includes/datastream');
-    $dsids = islandora_get_dsids($this->source['content_model']);
+    module_load_include('inc', 'islandora', 'includes/utilities');
+    $dsids = islandora_get_datastreams_requirements_from_models((array)$this->source['content_model']);
 
     foreach ($this->source['object_info'] as $datastream => $name) {
       if ($datastream == 'xml') {
-        // XML streams are handled via the parent implementation, so let's go
-        //  to the next item.
+        // XML streams are handled via the parent implementation, 
+        //  (via get_{mods,dc}()) so let's go to the next item.
         continue;
       }
 
@@ -191,13 +233,7 @@ class ZipBatchImportObject extends IslandoraImportObject {
       //  as received from the DC-COMPOSITE.
       $mimetype = $mime_detect->getMimetype($name);
       
-      $dsid = strtoupper($datastream);
-      foreach ($dsids as $ds => $mimes) {
-        if (in_array($mimetype, $mimes)) {
-          $dsid = $ds;
-          break;
-        }
-      }
+      $dsid = $this->determine_dsid($name, $datastream);
 
       $zip = new ZipArchive();
       $zip->open(drupal_realpath($this->source['file']->uri));
@@ -211,12 +247,16 @@ class ZipBatchImportObject extends IslandoraImportObject {
             'dsid' => $dsid,
             'label' => "$dsid datastream",
             'mimetype' => $mimetype,
-            'datastream_file' => "public://$name",
+            'datastream_file' => file_create_url($file->uri),
             'control_group' => 'M',
           ),
         );
       }
       $zip->close();
+
+      // XXX: If multiple assets were currently possible, this "break" would
+      //   not be valid.
+      break;
     }
 
     return $to_return;
