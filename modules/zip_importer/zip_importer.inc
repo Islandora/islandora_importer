@@ -86,18 +86,22 @@ class ZipBatchImporter extends IslandoraBatchImporter {
 
   public static function ready_for_batch(&$form_state) {
     if (empty($form_state['storage']['file'])) {
-      $file = file_save_upload('file');
+      // Deal with the managed upload.
+      $file = file_load($form_state['values']['file']);
+
       if ($file) {
         $form_state['storage']['file'] = $file;
       }
     }
+
+    dsm($form_state, 'asdf');
 
     return !empty($form_state['storage']['file']);
   }
 
   public static function get_batch_info(&$form_state) {
      // Load the file.
-     $file = file_load($form_state['values']['file']);
+     $file = $form_state['storage']['file'];
 
      // Grab the content models.
      // Cast to an array, in case there are none?
@@ -130,7 +134,7 @@ class ZipBatchImporter extends IslandoraBatchImporter {
       $path_info = pathinfo($name);
 
       $object_key = $path_info['dirname'] . '-_-' . $path_info['filename'];
-      if (strpos($path_info['dirname'], '__MACOSX/') === FALSE && isset($path_info['extension'])) {
+      if (strpos($path_info['dirname'], '__MACOSX') === FALSE && isset($path_info['extension'])) {
         $datastream_key = strtolower($path_info['extension']);
         $info[$object_key][$datastream_key] = $name;
       }
