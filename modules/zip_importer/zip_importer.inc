@@ -94,8 +94,6 @@ class ZipBatchImporter extends IslandoraBatchImporter {
       }
     }
 
-    dsm($form_state, 'asdf');
-
     return !empty($form_state['storage']['file']);
   }
 
