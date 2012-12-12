@@ -85,15 +85,6 @@ class ZipBatchImporter extends IslandoraBatchImporter {
   }
 
   public static function ready_for_batch(&$form_state) {
-    //if (empty($form_state['storage']['file'])) {
-      // Deal with the managed upload.
-    //  $file = file_load($form_state['values']['file']);
-
-   //   if ($file) {
-   //     $form_state['storage']['file'] = $file;
-   //   }
-   // }
-
     if (empty($form_state['values']['file'])) {
       form_set_error('file', t('Need a zip file!'));
     }
