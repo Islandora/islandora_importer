@@ -85,21 +85,30 @@ class ZipBatchImporter extends IslandoraBatchImporter {
   }
 
   public static function ready_for_batch(&$form_state) {
-    if (empty($form_state['storage']['file'])) {
+    //if (empty($form_state['storage']['file'])) {
       // Deal with the managed upload.
-      $file = file_load($form_state['values']['file']);
+    //  $file = file_load($form_state['values']['file']);
 
-      if ($file) {
-        $form_state['storage']['file'] = $file;
-      }
+   //   if ($file) {
+   //     $form_state['storage']['file'] = $file;
+   //   }
+   // }
+
+    if (empty($form_state['values']['file'])) {
+      form_set_error('file', t('Need a zip file!'));
     }
 
-    return !empty($form_state['storage']['file']);
+    $content_models = array_filter($form_state['values']['content_model']);
+    if (empty($content_models)) {
+      form_set_error('content_model', t('Need to select at least one content model.'));
+    }
+
+    return !empty($form_state['values']['file']) && !empty($content_models);
   }
 
   public static function get_batch_info(&$form_state) {
      // Load the file.
-     $file = $form_state['storage']['file'];
+     $file = file_load($form_state['values']['file']);
 
      // Grab the content models.
      // Cast to an array, in case there are none?
