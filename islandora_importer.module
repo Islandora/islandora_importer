@@ -120,6 +120,20 @@ function islandora_importer_form($form, &$form_state, $object) { // $parent_pid 
 }
 
 /**
+ * Batch form validation handler.
+ */
+function islandora_importer_form_validate(&$form, &$form_state) {
+  if (isset($form_state['storage']['importer'])) {
+    extract($form_state['storage']['importer']);
+    module_load_include('inc', 'islandora_importer');
+    module_load_include($type, $module, $file);
+    if (is_subclass_of($class, 'IslandoraBatchImporter') && !$class::ready_for_batch($form_state)) {
+      form_set_error('', t('Not ready to start the batch ingest.  Make sure all necessary information has been entered.'));
+    }
+  }
+}
+
+/**
  * Default batch form submit handler.
  *
  * If we do not have an importer (we're selecting one), save the selection into
@@ -140,7 +154,7 @@ function islandora_importer_form_submit(&$form, &$form_state) {
     extract($form_state['storage']['importer']);
     module_load_include('inc', 'islandora_importer');
     module_load_include($type, $module, $file);
-    if (is_subclass_of($class, 'IslandoraBatchImporter') && $class::ready_for_batch($form_state)) {
+    if (is_subclass_of($class, 'IslandoraBatchImporter')) {
       $batch = array(
         'title' => t('Islandora Batch Import'),
         'operations' => array(),
