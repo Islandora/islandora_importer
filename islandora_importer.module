@@ -68,8 +68,6 @@ function islandora_importer_form($form, &$form_state, $object) { // $parent_pid 
     //   and the class is one which extends IslandoraBatchImporter
     //   (which is defined in islandora_importer.inc)
     extract($form_state['storage']['importer']);
-    module_load_include('inc', 'islandora_importer');
-    module_load_include($type, $module, $file);
     if (is_subclass_of($class, 'IslandoraBatchImporter')) {
       return $class::get_form($form_state);
     }
@@ -125,8 +123,6 @@ function islandora_importer_form($form, &$form_state, $object) { // $parent_pid 
 function islandora_importer_form_validate(&$form, &$form_state) {
   if (isset($form_state['storage']['importer'])) {
     extract($form_state['storage']['importer']);
-    module_load_include('inc', 'islandora_importer');
-    module_load_include($type, $module, $file);
     if (is_subclass_of($class, 'IslandoraBatchImporter') && !$class::ready_for_batch($form_state)) {
       form_set_error('', t('Not ready to start the batch ingest.  Make sure all necessary information has been entered.'));
     }
@@ -152,8 +148,6 @@ function islandora_importer_form_validate(&$form, &$form_state) {
 function islandora_importer_form_submit(&$form, &$form_state) {
   if (isset($form_state['storage']['importer'])) {
     extract($form_state['storage']['importer']);
-    module_load_include('inc', 'islandora_importer');
-    module_load_include($type, $module, $file);
     if (is_subclass_of($class, 'IslandoraBatchImporter')) {
       $batch = array(
         'title' => t('Islandora Batch Import'),
@@ -209,9 +203,6 @@ function islandora_importer_form_submit(&$form, &$form_state) {
  */
 function islandora_importer_run_batch($class_info, $import_info, $parent_pid, &$context) {
   extract($class_info);
-  module_load_include('inc', 'islandora_importer');
-  module_load_include($type, $module, $file);
-
   // XXX:  Bit of a hack, as batch parameters cannot be references.
   if (!isset($context['results']['islandora_importer']['import_info'])) {
     $context['results']['islandora_importer']['import_info'] = $import_info;
