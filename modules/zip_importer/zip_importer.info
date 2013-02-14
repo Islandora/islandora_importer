@@ -3,5 +3,6 @@ description = Importer plugin for Zip files, with selectable content models.
 package = Islandora Tools
 dependencies[] = islandora_importer
 dependencies[] = islandora_basic_collection
+files[] = includes/importer.inc
 version = 7.x-dev
 core = 7.x

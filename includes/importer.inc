@@ -134,7 +134,6 @@ abstract class IslandoraBatchImporter implements IslandoraBatchImporterInterface
 
     $item_class = $this->item_class;
 
-    module_load_include('inc', 'islandora', 'includes/tuque');
     $tuque = new IslandoraTuque();
 
     //Assume we'll have enough time if less than 1/3 of the execution time has passed.
@@ -394,7 +393,6 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
    */
   public function write_to_fedora($pid, $parent_pid = NULL) {
     global $user;
-    module_load_include('ingest.inc', 'islandora', 'includes/islandora');
 
     /**
      * @var array

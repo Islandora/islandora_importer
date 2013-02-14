@@ -1,6 +1,5 @@
 <?php
 
-module_load_include('inc', 'islandora_importer');
 
 /**
  * Zip file importer.
