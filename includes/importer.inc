@@ -425,6 +425,7 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
       'pid' => $parent_pid,
     );
 
+    module_load_include('inc', 'islandora', 'includes/utilities');
     $object = islandora_prepare_new_object($pid, $label,
       $datastreams, $content_models, $relationships, $collection_pid);
 
