@@ -44,9 +44,10 @@ function islandora_importer_access_callback($object) {
   if (!$object) {
     return FALSE;
   }
-
-  return ((count(islandora_importer_get_options()) > 0) &&
-    user_access(FEDORA_INGEST));
+  $has_import_options = count(islandora_importer_get_options()) > 0;
+  // For now only permit batch importing into collections?
+  $is_collection = in_array('islandora:collectionCModel', $object->models);
+  return user_access(FEDORA_INGEST) && $is_collection && $has_import_options;
 }
 
 /**
