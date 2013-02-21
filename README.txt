@@ -1,6 +1,6 @@
 Islandora Importer
 
-Made primarily for ingesting objects described by MODS (and DC).
+Made primarily for ingesting objects described by MODS and DC.
 
 A number of importer modules have been included, which should be described in
 greater detail where they reside (in the "modules" directory):
