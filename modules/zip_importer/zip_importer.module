@@ -6,9 +6,6 @@
 function zip_importer_islandora_importer() {
   return array(
     'zip_importer' => array(
-      'type' => 'inc',
-      'module' => 'zip_importer',
-      'file' => 'zip_importer',
       'title' => t('ZIP File Importer'),
       'class' => 'ZipBatchImporter',
     )

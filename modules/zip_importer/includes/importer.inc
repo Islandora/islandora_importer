@@ -239,12 +239,21 @@ class ZipBatchImportObject extends IslandoraImportObject {
 
       // Determine which stream this should be...  Uses the first matching, as
       // as received from the DC-COMPOSITE.
+
+
       $mimetype = $mime_detect->getMimetype($name);
+      
+      if (!isset($mappings[$mimetype])) {
+        drupal_set_message(t('@mime not supported by this @content', array('@mime' => $mimetype, '@content' => $this->source['content_model'])), 'warning', FALSE);
+        continue;
+      }
+
+
 
 
       // using mapping allows us to map more thna OBJ.  Will not work for Content Models with more than one datastream with the same mimetype
       // other import modules would be better suited for those content models.
-      
+
       $dsid = $mappings[$mimetype];
 
       $zip = new ZipArchive();
