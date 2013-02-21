@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * This file documents all available hook functions to manipulate data.
+ */
+
+/**
  * Hook to register importers.
  *
  * @return array

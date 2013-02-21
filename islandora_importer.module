@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Defines all the hooks this module implements.
+ */
+
+/**
  * Implements hook_menu().
  */
 function islandora_importer_menu() {
@@ -51,30 +56,28 @@ function islandora_importer_access_callback($object) {
  * made, get the form from the "batch class".
  *
  * @param array $form
+ *   The Drupal form definition.
  * @param array $form_state
- *   A reference to the array containing the form state.
- * @param AbstractFedoraObject
+ *   The Drupal form state.
+ * @param AbstractFedoraObject $object
  *   A string containing the Fedora collection PID into which we will import
  *   citations.
  *
  * @return array
- *   An array describing the form structure.
+ *   The Drupal form definition.
  */
-function islandora_importer_form($form, &$form_state, $object) { // $parent_pid = NULL, $options = NULL) {
+function islandora_importer_form(array $form, array &$form_state, AbstractFedoraObject $object) {
   if (isset($form_state['storage']['importer'])) {
-    //Importers need something like:
-    //
+    // Importers need something like:
     // The first three correspond the the parameters to module_load_include,
-    //   and the class is one which extends IslandoraBatchImporter
-    //   (which is defined in islandora_importer.inc)
+    // and the class is one which extends IslandoraBatchImporter
+    // (which is defined in islandora_importer.inc)
     extract($form_state['storage']['importer']);
     if (is_subclass_of($class, 'IslandoraBatchImporter')) {
-      return $class::get_form($form_state);
+      return $class::getForm($form_state);
     }
     else {
-      drupal_set_message(t('The %title importer does not correctly subclass' .
-        ' IslandoraBatchImporter...  Inform the particular importer module\'s ' .
-        'maintainer!', array('%title' => $title)), 'error');
+      drupal_set_message(t("The %title importer does not correctly subclass IslandoraBatchImporter. Inform the particular importer module's maintainer!", array('%title' => $title)), 'error');
       unset($form_state['storage']['options'][$form_state['storage']['importer_name']]);
       unset($form_state['storage']['importer']);
     }
@@ -120,10 +123,10 @@ function islandora_importer_form($form, &$form_state, $object) { // $parent_pid 
 /**
  * Batch form validation handler.
  */
-function islandora_importer_form_validate(&$form, &$form_state) {
+function islandora_importer_form_validate(array $form, array &$form_state) {
   if (isset($form_state['storage']['importer'])) {
     extract($form_state['storage']['importer']);
-    if (is_subclass_of($class, 'IslandoraBatchImporter') && !$class::ready_for_batch($form_state)) {
+    if (is_subclass_of($class, 'IslandoraBatchImporter') && !$class::readyForBatch($form_state)) {
       form_set_error('', t('Not ready to start the batch ingest.  Make sure all necessary information has been entered.'));
     }
   }
@@ -134,18 +137,19 @@ function islandora_importer_form_validate(&$form, &$form_state) {
  *
  * If we do not have an importer (we're selecting one), save the selection into
  * storage.
+ *
  * If we do (and are of course not being overridden by the form from an
- * individual importer plugin), we ask the batch class if we have what they need,
+ * individual importer plugin), we ask the batch class if we have what they need
  * (providing them with the form state to check) and if so, ask for them to
  * package up what they need into a serializable format to pass along in a
  * batch operation and finally kick off the batch process.
  *
- * @param $form
+ * @param array $form
  *   An array containing the form structure.
- * @param $form_state
+ * @param array $form_state
  *   An array containing the form state.
  */
-function islandora_importer_form_submit(&$form, &$form_state) {
+function islandora_importer_form_submit(array $form, array &$form_state) {
   if (isset($form_state['storage']['importer'])) {
     extract($form_state['storage']['importer']);
     if (is_subclass_of($class, 'IslandoraBatchImporter')) {
@@ -158,15 +162,16 @@ function islandora_importer_form_submit(&$form, &$form_state) {
       $batch['operations'][] = array(
         'islandora_importer_run_batch', array(
           $form_state['storage']['importer'],
-          $class::get_batch_info($form_state),
+          $class::getBatchInfo($form_state),
           $form_state['storage']['parent_pid'],
-        )
+        ),
       );
 
-      //XXX: Allow modules to alter...  Don't know if this is really a good idea or not.
+      // XXX: Allow modules to alter. Don't know if this is really a good idea
+      // or not.
       drupal_alter('islandora_importer_batch', $batch);
 
-      //Set and start the batch.
+      // Set and start the batch.
       batch_set($batch);
       batch_process();
     }
@@ -191,17 +196,18 @@ function islandora_importer_form_submit(&$form, &$form_state) {
  *   along a (serializable) instantiation of the importer class and the name
  *   of the method to call on it...  Instead, we need to pass the name of
  *   a function due to the use of "function_exists".
- * @param $class_info
+ *
+ * @param array $class_info
  *   The associative array defining where to find the importer class.
- * @param $import_info
+ * @param array $import_info
  *   The data with which to instantiate the importer class.
- * @param $parent_pid
+ * @param string $parent_pid
  *   A string containing a Fedora collection PID, into which objects should
  *   imported.
- * @param $context
+ * @param array $context
  *   An array containing the Drupal batch context.
  */
-function islandora_importer_run_batch($class_info, $import_info, $parent_pid, &$context) {
+function islandora_importer_run_batch(array $class_info, $import_info, $parent_pid, array &$context) {
   extract($class_info);
   // XXX:  Bit of a hack, as batch parameters cannot be references.
   if (!isset($context['results']['islandora_importer']['import_info'])) {
@@ -211,7 +217,7 @@ function islandora_importer_run_batch($class_info, $import_info, $parent_pid, &$
 
   if (is_subclass_of($class, 'IslandoraBatchImporter')) {
     $instance = new $class($import_info, $parent_pid, $context);
-    $instance->run_batch();
+    $instance->runBatch();
   }
 }
 
@@ -221,14 +227,14 @@ function islandora_importer_run_batch($class_info, $import_info, $parent_pid, &$
  * Dumps all results on success, informs of failed operations on failure.
  * (via drupal_set_message).
  *
- * @param $success
+ * @param bool $success
  *   A boolean indicating success
- * @param $results
+ * @param array $results
  *   An array of results (from the $context['results']
- * @param $ops
+ * @param array $ops
  *   An array of failed operations.
  */
-function islandora_importer_batch_finished($success, $results, $ops) {
+function islandora_importer_batch_finished($success, array $results, array $ops) {
   if ($success) {
     // XXX: Remove some of our "stored" values.
     unset($results['pid_cache']);
@@ -236,26 +242,26 @@ function islandora_importer_batch_finished($success, $results, $ops) {
 
     $filename = file_create_filename('batch_import_results.html', 'public://');
     $file = fopen($filename, 'w');
-    fputs($file, '<html><body><ol>');
+    fwrite($file, '<html><body><ol>');
     $levels = watchdog_severity_levels();
     foreach ($results as $result) {
       $message = $result[0];
-      $subs = (array)$result[1];
-      $level = (isset($result[2]) && array_key_exists($result[2], $levels))?
-        $result[2]:
+      $subs = (array) $result[1];
+      $level = (isset($result[2]) && array_key_exists($result[2], $levels)) ?
+        $result[2] :
         WATCHDOG_INFO;
       $link = isset($result[3])?
-        $result[3]:
+        $result[3] :
         '';
 
-      fputs($file, '<li>' . $levels[$level] . ': ' . t($message, $subs) . ((!empty($link))?
-        ('  ' . t('Link: !link.', array('!link' => $link))):
+      fwrite($file, '<li>' . $levels[$level] . ': ' . t($message, $subs) . ((!empty($link)) ?
+        ('  ' . t('Link: !link.', array('!link' => $link))) :
         '') . "</li>");
 
       array_unshift($result, 'islandora_importer');
       call_user_func_array('watchdog', $result);
     }
-    fputs($file, '</ol></body></html>');
+    fwrite($file, '</ol></body></html>');
     fclose($file);
 
     if (user_access('access site reports')) {
