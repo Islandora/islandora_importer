@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Defines all the hooks this module implements.
+ */
+
+/**
  * Implements hook_islandora_importer().
  */
 function zip_importer_islandora_importer() {
@@ -8,7 +13,7 @@ function zip_importer_islandora_importer() {
     'zip_importer' => array(
       'title' => t('ZIP File Importer'),
       'class' => 'ZipBatchImporter',
-    )
+    ),
   );
 }
 
