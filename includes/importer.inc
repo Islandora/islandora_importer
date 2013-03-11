@@ -174,7 +174,7 @@ abstract class IslandoraBatchImporter implements IslandoraBatchImporterInterface
           array(
             '%num' => $this->context['sandbox']['progress'],
           ),
-          'error',
+          WATCHDOG_ERROR,
         );
       }
 
