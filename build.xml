@@ -51,7 +51,7 @@
 
   <target name="code_sniff" description="Checks the code for Drupal coding standard violations" >
     <exec executable="phpcs">
-        <arg line="--standard=Drupal --report=checkstyle --report-file=${basedir}/build/logs/checkstyle.xml --extensions=php,inc,test,module,install --ignore=build/,xsl/,modules/ ${basedir} ${basedir}/includes ${basedir}/theme" />
+        <arg line="--standard=Drupal --report=checkstyle --report-file=${basedir}/build/logs/checkstyle.xml --extensions=php,inc,test,module,install --ignore=build/,xsl/,modules/ ${basedir} ${basedir}/includes" />
     </exec>
   </target>
 
