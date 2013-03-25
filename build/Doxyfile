@@ -27,7 +27,7 @@ DOXYFILE_ENCODING      = UTF-8
 
 PROJECT_NAME           = Islandora Importer
 
-# Put the git hash here usinig sed before generating the documentation.
+# Put the git hash here using sed before generating the documentation.
 PROJECT_NUMBER         =
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute)
