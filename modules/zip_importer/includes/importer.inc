@@ -58,10 +58,10 @@ class ZipBatchImporter extends IslandoraBatchImporter {
       'fs' => array(
         '#type' => 'fieldset',
         '#title' => t('Zip Batch Importer'),
-        '#description' => t('Select the file containing the assets and metadata to import. Assets and metadata will be matched together based on the portion of the filename without the extension, so my_file.xml and my_file.pdf will be combined into a single object.'),
+        '#description' => t('Select the file containing the assets and metadata to import. Assets and metadata will be matched together based on the portion of the filename without the extension - e.g. my_file.xml and my_file.pdf would be combined into a single object.'),
         'file' => array(
           '#type' => 'managed_file',
-          '#title' => t('Zip file of files to import'),
+          '#title' => t('Zip file containing files to import'),
           '#upload_validators' => array(
             'file_validate_extensions' => array('zip'),
           ),
@@ -98,7 +98,7 @@ class ZipBatchImporter extends IslandoraBatchImporter {
    */
   public static function readyForBatch(array &$form_state) {
     if (empty($form_state['values']['file'])) {
-      form_set_error('file', t('Need a zip file!'));
+      form_set_error('file', t('Need a Zip file!'));
     }
 
     $content_models = array_filter($form_state['values']['content_model']);
