@@ -103,7 +103,7 @@ abstract class IslandoraBatchImporter implements IslandoraBatchImporterInterface
     return array(
       'nothing' => array(
         '#type' => 'item',
-        '#value' => t('This importer does not define a form...  This is a problem.'),
+        '#value' => t('Warning: this importer does not define a form'),
       ),
     );
   }
@@ -356,7 +356,7 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
     }
     else {
       $errors[] = array(
-        t('Failed to produce MODS for @pid.'),
+        t('Failed to produce MODS record for @pid.'),
       );
     }
 
@@ -375,7 +375,7 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
     }
     else {
       $errors[] = array(
-        t('Failed to produce DC for @pid.'),
+        t('Failed to produce DC record for @pid.'),
       );
     }
 
@@ -435,7 +435,7 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
       }
 
       $to_return[] = array(
-        t('There seem to have been issues ingesting "%title" as %pid.'),
+        t('Error ingesting "%title" as %pid.'),
         array(
           '%pid' => $pid,
           '%title' => $this->getTitle()),
