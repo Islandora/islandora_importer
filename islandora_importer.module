@@ -60,14 +60,14 @@ function islandora_importer_access_callback($object) {
  *   The Drupal form definition.
  * @param array $form_state
  *   The Drupal form state.
- * @param AbstractFedoraObject $object
+ * @param AbstractObject $object
  *   A string containing the Fedora collection PID into which we will import
  *   citations.
  *
  * @return array
  *   The Drupal form definition.
  */
-function islandora_importer_form(array $form, array &$form_state, AbstractFedoraObject $object) {
+function islandora_importer_form(array $form, array &$form_state, AbstractObject $object) {
   if (isset($form_state['storage']['importer'])) {
     // Importers need something like:
     // The first three correspond the the parameters to module_load_include,
