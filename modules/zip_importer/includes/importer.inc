@@ -213,31 +213,6 @@ class ZipBatchImportObject extends IslandoraImportObject {
    *   in-code comments for a bit more info.
    */
   protected function determineDSID($name, $extension) {
-    // Something like this would be nice to have...  Need a way to indicate
-    // primary assets, though...  Think about basic image, where the content
-    // model can contain "OBJ" image/jpeg, "TN" image/jpeg and so on...
-    //
-    // static $mime_detect = new MimeDetect(),
-    // $dsids = NULL;
-    //
-    // if ($dsids === NULL) {
-    // module_load_include('inc', 'islandora', 'includes/utilities');
-    // $models = (array)$this->source['content_model'];
-    // $dsids = islandora_get_datastreams_requirements_from_models($models);
-    // }
-    //
-    // Determine which stream this should be...  Uses the first matching, as
-    // as received from the DC-COMPOSITE.
-    // $mimetype = $mime_detect->getMimetype($name);
-    //
-    // $dsid = strtoupper($extension);
-    // foreach ($dsids as $ds => $info) {
-    // if (in_array($mimetype, $info['mime'])) {
-    // $dsid = $ds;
-    // break;
-    // }
-    // }
-    // return $dsid;
     return 'OBJ';
   }
 
