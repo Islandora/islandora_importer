@@ -172,7 +172,7 @@ abstract class IslandoraBatchImporter implements IslandoraBatchImporterInterface
 
       $result = NULL;
       if ($item) {
-        $pid = $this->getIdentifier();
+        $pid = $this->getIdentifier($tuque);
 
         $results = $item->writeToFedora($pid, $this->parentPid);
 
