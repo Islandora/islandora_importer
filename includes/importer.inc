@@ -117,6 +117,25 @@ abstract class IslandoraBatchImporter implements IslandoraBatchImporterInterface
   public abstract function getNumber();
 
   /**
+   * Get an identifier.
+   *
+   * @return string
+   *   An identifier for the repo.
+   */
+  protected function getIdentifier(IslandoraTuque $tuque) {
+    if (empty($this->context['results']['pid_cache'])) {
+      // Get enough PIDs for half of the remaining items.
+      // (plus one, so we'll always get at least one).
+      $this->context['results']['pid_cache'] = (array) $tuque->api->m->getNextPid(
+        $item->pidNamespace,
+        intval((($this->context['sandbox']['max'] - $this->context['sandbox']['progress']) / 2) + 1)
+      );
+    }
+
+    return array_shift($this->context['results']['pid_cache']);
+  }
+
+  /**
    * Loop import until we have used up 1/3 of the max execution time.
    */
   public function runBatch() {
@@ -153,15 +172,7 @@ abstract class IslandoraBatchImporter implements IslandoraBatchImporterInterface
 
       $result = NULL;
       if ($item) {
-        if (empty($this->context['results']['pid_cache'])) {
-          // Get enough PIDs for half of the remaining items.
-          // (plus one, so we'll always get at least one).
-          $this->context['results']['pid_cache'] = (array) $tuque->api->m->getNextPid(
-            $item->pidNamespace,
-            intval((($this->context['sandbox']['max'] - $this->context['sandbox']['progress']) / 2) + 1)
-          );
-        }
-        $pid = array_shift($this->context['results']['pid_cache']);
+        $pid = $this->getIdentifier();
 
         $results = $item->writeToFedora($pid, $this->parentPid);
 
@@ -386,8 +397,6 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
    * Write this item to Fedora.
    */
   public function writeToFedora($pid, $parent_pid = NULL) {
-    global $user;
-
     // An array of arrays, containing a structure describing error
     // conditions.
     // - A translated string
@@ -401,9 +410,6 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
     $label = $this->getTitle();
     $datastreams = $this->getDatastreams($to_return, $files);
     $relationships = array();
-    $collection_pid = NULL;
-
-    $files = array();
 
     $content_models = array_unique((array) $this->contentModel);
 
