@@ -122,12 +122,12 @@ abstract class IslandoraBatchImporter implements IslandoraBatchImporterInterface
    * @return string
    *   An identifier for the repo.
    */
-  protected function getIdentifier(IslandoraTuque $tuque) {
+  protected function getIdentifier(IslandoraTuque $tuque, $namespace) {
     if (empty($this->context['results']['pid_cache'])) {
       // Get enough PIDs for half of the remaining items.
       // (plus one, so we'll always get at least one).
       $this->context['results']['pid_cache'] = (array) $tuque->api->m->getNextPid(
-        $item->pidNamespace,
+        $namespace,
         intval((($this->context['sandbox']['max'] - $this->context['sandbox']['progress']) / 2) + 1)
       );
     }
@@ -172,9 +172,9 @@ abstract class IslandoraBatchImporter implements IslandoraBatchImporterInterface
 
       $result = NULL;
       if ($item) {
-        $pid = $this->getIdentifier($tuque);
+        $pid = $this->getIdentifier($tuque, $item->pidNamespace);
 
-        $results = $item->writeToFedora($pid, $this->parentPid);
+        $results = $item->writeToFedora($pid, $this->parentPid, $this->context['sandbox']);
 
         $this->context['results'] = array_merge($this->context['results'], $results);
       }
@@ -395,8 +395,25 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
 
   /**
    * Write this item to Fedora.
+   *
+   * @param string $pid
+   *   A PID to we can use to which to write our object.
+   * @param string $parent_pid
+   *   The parent to whom we should relate our object.
+   * @param array $sandbox
+   *   A reference to the batch $context['sandbox'], so we can pass information
+   *   around a little more easily (e.g. for reporting).
+   *
+   * @return array
+   *   An array of arrays, each with up to four values:
+   *   - A string containing a message which will be passed to format_string()
+   *     and in the watchdog.
+   *   - An associative array of placeholders, as used by format_string() and
+   *     watchdog, to use in the message.
+   *   - An integer representing a watchdog error level
+   *   - A string containing a rendered link.
    */
-  public function writeToFedora($pid, $parent_pid = NULL) {
+  public function writeToFedora($pid, $parent_pid = NULL, &$sandbox) {
     // An array of arrays, containing a structure describing error
     // conditions.
     // - A translated string
