@@ -240,8 +240,8 @@ function islandora_importer_batch_finished($success, array $results, array $ops)
     unset($results['pid_cache']);
     unset($results['islandora_importer']);
 
-    $filename = file_create_filename('batch_import_results.html', 'public://');
-    $file = fopen($filename, 'w');
+    $file_object = file_save_data('', 'public://batch_import_results.html');
+    $file = fopen($file_object->uri, 'w');
     fwrite($file, '<html><body><ol>');
     $levels = watchdog_severity_levels();
     foreach ($results as $result) {
@@ -264,15 +264,20 @@ function islandora_importer_batch_finished($success, array $results, array $ops)
     fwrite($file, '</ol></body></html>');
     fclose($file);
 
+    // Make the file temporary, so it should get deleted when the cron job is
+    // run after 6 hours.
+    $file_object->status = 0;
+    file_save($file_object);
+
     if (user_access('access site reports')) {
       drupal_set_message(t('Batch complete!  View/Download !results or see the !watchdog for details.', array(
-        '!results' => l(t('simple results'), file_create_url($filename)),
+        '!results' => l(t('simple results'), file_create_url($file_object->uri)),
         '!watchdog' => l(t('watchdog log'), 'admin/reports/dblog'),
       )), 'info');
     }
     else {
       drupal_set_message(t('Batch complete!  View/Download !results.', array(
-        '!results' => l(t('simple results'), file_create_url($filename)),
+        '!results' => l(t('simple results'), file_create_url($file_object->uri)),
       )), 'info');
     }
   }
