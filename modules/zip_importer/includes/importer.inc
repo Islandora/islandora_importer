@@ -126,7 +126,7 @@ class ZipBatchImporter extends IslandoraBatchImporter {
       'file' => $file,
       'pid_namespace' => $form_state['values']['namespace'],
       'content_model' => $content_models,
-      'object_info' => self::getIngestInfo($file),
+      'object_info' => static::getIngestInfo($file),
       'processed_objects' => array(),
     );
     return $info;
@@ -201,7 +201,7 @@ class ZipBatchImportObject extends IslandoraImportObject {
     $key = key($info['object_info']);
     $record['object_info'] = $info['processed_objects'][$key] = $info['object_info'][$key];
     unset($info['object_info'][$key]);
-    return (empty($record) ? FALSE : new self($record));
+    return (empty($record) ? FALSE : new static($record));
   }
 
   /**
@@ -323,14 +323,14 @@ class ZipBatchImportObject extends IslandoraImportObject {
           }
           // MARCXML, transform to MODS and set.
           elseif ($s_xml->getName() == 'record') {
-            $this->mods = self::runXSLTransform(array(
+            $this->mods = static::runXSLTransform(array(
                   'input' => $xml,
                   'xsl' => drupal_get_path('module', 'zip_importer') . '/xsl/MARC21slim2MODS3-4.xsl',
                 ));
           }
           // DC, transform to MODS and set.
           elseif ($s_xml->getName() == 'dc') {
-            $this->mods = self::runXSLTransform(array(
+            $this->mods = static::runXSLTransform(array(
                   'input' => $xml,
                   'xsl' => drupal_get_path('module', 'zip_importer') . '/xsl/simpleDC2MODS.xsl',
                 ));
