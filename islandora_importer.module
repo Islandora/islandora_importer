@@ -270,13 +270,13 @@ function islandora_importer_batch_finished($success, array $results, array $ops)
     file_save($file_object);
 
     if (user_access('access site reports')) {
-      drupal_set_message(format_xss(t('Batch complete!  View/Download !results or see the !watchdog for details.', array(
+      drupal_set_message(filter_xss(t('Batch complete!  View/Download !results or see the !watchdog for details.', array(
         '!results' => l(t('simple results'), file_create_url($file_object->uri)),
         '!watchdog' => l(t('watchdog log'), 'admin/reports/dblog'),
       ))), 'info');
     }
     else {
-      drupal_set_message(format_xss(t('Batch complete!  View/Download !results.', array(
+      drupal_set_message(filter_xss(t('Batch complete!  View/Download !results.', array(
         '!results' => l(t('simple results'), file_create_url($file_object->uri)),
       ))), 'info');
     }
