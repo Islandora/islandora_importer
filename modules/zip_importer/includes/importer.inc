@@ -226,7 +226,7 @@ class ZipBatchImportObject extends IslandoraImportObject {
     static $mime_detect = NULL;
     static $dsids = NULL;
 
-   if ($mime_detect === NULL || $dsids === NULL) {
+    if ($mime_detect === NULL || $dsids === NULL) {
       $mime_detect = new MimeDetect();
 
       module_load_include('inc', 'islandora', 'includes/utilities');
