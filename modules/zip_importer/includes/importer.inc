@@ -207,6 +207,9 @@ class ZipBatchImportObject extends IslandoraImportObject {
   /**
    * Determine the datastream ID for the given file.
    *
+   * Gets info from the DS-COMPOSITE-MODELs for the selected content models
+   * and attempts to match based on detected MIME-Types.
+   *
    * @param string $name
    *   A filename for which to determine a mimetype.
    *
@@ -220,10 +223,12 @@ class ZipBatchImportObject extends IslandoraImportObject {
     // Something like this would be nice to have...  Need a way to indicate
     // primary assets, though...  Think about basic image, where the content
     // model can contain "OBJ" image/jpeg, "TN" image/jpeg and so on...
-    static $mime_detect = new MimeDetect();
+    static $mime_detect = NULL;
     static $dsids = NULL;
 
-    if ($dsids === NULL) {
+   if ($mime_detect === NULL || $dsids === NULL) {
+      $mime_detect = new MimeDetect();
+
       module_load_include('inc', 'islandora', 'includes/utilities');
       $models = (array) $this->source['content_model'];
       $dsids = islandora_get_datastreams_requirements_from_models($models);
@@ -265,10 +270,14 @@ class ZipBatchImportObject extends IslandoraImportObject {
       list($dsid, $mimetype) = $this->determineDSIDAndMimetype($name);
 
       if (!$dsid) {
-        drupal_set_message(t('The detected mimetype of %filename (@mime) is not supported by any of the selected content models.', array(
-          '@mime' => $mimetype,
-          '%filename' => $name,
-        )), 'warning', FALSE);
+        $errors[] = array(
+          t('The detected mimetype of %filename (@mime) is not supported by any of the selected content models.'),
+          array(
+            '@mime' => $mimetype,
+            '%filename' => $name,
+          ),
+          WATCHDOG_ERROR,
+        );
         continue;
       }
 
