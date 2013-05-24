@@ -413,7 +413,7 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
    *   - An integer representing a watchdog error level
    *   - A string containing a rendered link.
    */
-  public function writeToFedora($pid, $parent_pid = NULL, &$sandbox) {
+  public function writeToFedora($pid, $parent_pid, &$sandbox) {
     // An array of arrays, containing a structure describing error
     // conditions.
     // - A translated string
