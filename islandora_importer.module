@@ -254,8 +254,8 @@ function islandora_importer_batch_finished($success, array $results, array $ops)
         $result[3] :
         '';
 
-      fwrite($file, '<li>' . $levels[$level] . ': ' . t($message, $subs) . ((!empty($link)) ?
-        ('  ' . t('Link: !link.', array('!link' => $link))) :
+      fwrite($file, '<li>' . $levels[$level] . ': ' . format_string($message, $subs) . ((!empty($link)) ?
+        ('  ' . format_string('Link: !link.', array('!link' => $link))) :
         '') . "</li>");
 
       array_unshift($result, 'islandora_importer');
@@ -270,18 +270,20 @@ function islandora_importer_batch_finished($success, array $results, array $ops)
     file_save($file_object);
 
     if (user_access('access site reports')) {
-      drupal_set_message(t('Batch complete!  View/Download !results or see the !watchdog for details.', array(
+      drupal_set_message(format_xss(t('Batch complete!  View/Download !results or see the !watchdog for details.', array(
         '!results' => l(t('simple results'), file_create_url($file_object->uri)),
         '!watchdog' => l(t('watchdog log'), 'admin/reports/dblog'),
-      )), 'info');
+      ))), 'info');
     }
     else {
-      drupal_set_message(t('Batch complete!  View/Download !results.', array(
+      drupal_set_message(format_xss(t('Batch complete!  View/Download !results.', array(
         '!results' => l(t('simple results'), file_create_url($file_object->uri)),
-      )), 'info');
+      ))), 'info');
     }
   }
   else {
-    drupal_set_message("Failed operations: " . print_r($ops, TRUE), 'error');
+    drupal_set_message(t('Failed operations: @ops', array(
+      '@ops' => print_r($ops, TRUE),
+    )), 'error');
   }
 }

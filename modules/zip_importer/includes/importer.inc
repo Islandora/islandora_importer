@@ -207,38 +207,41 @@ class ZipBatchImportObject extends IslandoraImportObject {
   /**
    * Determine the datastream ID for the given file.
    *
-   * @return string
-   *   The string 'OBJ'. Was trying to match the mimetype against what the
-   *   DS-COMPOSITE-MODEL indicates is valid...  Some issues, though... See the
-   *   in-code comments for a bit more info.
+   * @param string $name
+   *   A filename for which to determine a mimetype.
+   *
+   * @return array
+   *   An array containing two values:
+   *   - Either boolean FALSE or the datastream ID, as mapped in the
+   *     DS-COMPOSITE-MODELs of the selected object.
+   *   - A string containing the detected mimetype of the file.
    */
-  protected function determineDSID($name, $extension) {
+  protected function determineDSIDAndMimetype($name) {
     // Something like this would be nice to have...  Need a way to indicate
     // primary assets, though...  Think about basic image, where the content
     // model can contain "OBJ" image/jpeg, "TN" image/jpeg and so on...
-    //
-    // static $mime_detect = new MimeDetect(),
-    // $dsids = NULL;
-    //
-    // if ($dsids === NULL) {
-    // module_load_include('inc', 'islandora', 'includes/utilities');
-    // $models = (array)$this->source['content_model'];
-    // $dsids = islandora_get_datastreams_requirements_from_models($models);
-    // }
-    //
+    static $mime_detect = new MimeDetect();
+    static $dsids = NULL;
+
+    if ($dsids === NULL) {
+      module_load_include('inc', 'islandora', 'includes/utilities');
+      $models = (array) $this->source['content_model'];
+      $dsids = islandora_get_datastreams_requirements_from_models($models);
+    }
+
+    $mimetype = $mime_detect->getMimetype($name);
+
+    $dsid = FALSE;
     // Determine which stream this should be...  Uses the first matching, as
-    // as received from the DC-COMPOSITE.
-    // $mimetype = $mime_detect->getMimetype($name);
-    //
-    // $dsid = strtoupper($extension);
-    // foreach ($dsids as $ds => $info) {
-    // if (in_array($mimetype, $info['mime'])) {
-    // $dsid = $ds;
-    // break;
-    // }
-    // }
-    // return $dsid;
-    return 'OBJ';
+    // received from the DC-COMPOSITE.
+    foreach ($dsids as $ds => $info) {
+      if (in_array($mimetype, $info['mime'])) {
+        $dsid = $ds;
+        break;
+      }
+    }
+
+    return array($dsid, $mimetype);
   }
 
   /**
@@ -249,9 +252,6 @@ class ZipBatchImportObject extends IslandoraImportObject {
   protected function getDatastreams(&$errors = NULL, &$files = NULL) {
     module_load_include('inc', 'islandora', 'includes/utilities');
     $to_return = parent::getDatastreams($errors, $files);
-    $mime_detect = new MimeDetect();
-    $mappings = $this->getDSComp();
-    $dsids = islandora_get_datastreams_requirements_from_models((array) $this->source['content_model']);
 
     foreach ($this->source['object_info'] as $datastream => $name) {
       if ($datastream == 'xml') {
@@ -262,17 +262,15 @@ class ZipBatchImportObject extends IslandoraImportObject {
 
       // Determine which stream this should be...  Uses the first matching, as
       // as received from the DC-COMPOSITE.
-      $mimetype = $mime_detect->getMimetype($name);
+      list($dsid, $mimetype) = $this->determineDSIDAndMimetype($name);
 
-      if (!isset($mappings[$mimetype])) {
-        drupal_set_message(t('@mime not supported by this @content', array('@mime' => $mimetype, '@content' => $this->source['content_model'])), 'warning', FALSE);
+      if (!$dsid) {
+        drupal_set_message(t('The detected mimetype of %filename (@mime) is not supported by any of the selected content models.', array(
+          '@mime' => $mimetype,
+          '%filename' => $name,
+        )), 'warning', FALSE);
         continue;
       }
-
-      // Using mapping allows us to map more thna OBJ. Will not work for Content
-      // Models with more than one datastream with the same mimetype other
-      // import modules would be better suited for those content models.
-      $dsid = $mappings[$mimetype];
 
       $zip = new ZipArchive();
       $zip->open(drupal_realpath($this->source['file']->uri));
@@ -292,10 +290,6 @@ class ZipBatchImportObject extends IslandoraImportObject {
         );
       }
       $zip->close();
-
-      // XXX: If multiple assets were currently possible, this "break" would
-      // not be valid.
-      // break;
     }
 
     return $to_return;
@@ -392,30 +386,4 @@ EOXML;
 
     return $this->dc;
   }
-
-  /**
-   * Populates mapping array with mimetype/DSID pairs.
-   *
-   * @return array
-   *   Mimetype to DSID Mapping.
-   */
-  public function getDSComp() {
-    $content_models = $this->contentModel;
-    reset($content_models);
-    $content_model = key($content_models);
-    $cm_object = islandora_object_load($content_model);
-    $datastream = $cm_object['DS-COMPOSITE-MODEL'];
-    $ds_comp_stream = $datastream->content;
-    $sxml = new SimpleXMLElement($ds_comp_stream);
-    $mappings = array();
-    foreach ($sxml->dsTypeModel as $ds) {
-      foreach ($ds->form as $form) {
-        $mime = (string) $form['MIME'];
-        $dsid = (string) $ds['ID'];
-        $mappings[$mime] = $dsid;
-      }
-    }
-    return $mappings;
-  }
-
 }
