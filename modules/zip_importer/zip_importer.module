@@ -33,4 +33,3 @@ function zip_importer_help($path, $args) {
     '</p>';
   }
 }
-
