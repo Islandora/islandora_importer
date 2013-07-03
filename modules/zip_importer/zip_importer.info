@@ -4,5 +4,5 @@ package = Islandora
 dependencies[] = islandora_importer
 dependencies[] = islandora_basic_collection
 files[] = includes/importer.inc
-version = 7.x-1.1
+version = 7.x-1.2-RC1
 core = 7.x
