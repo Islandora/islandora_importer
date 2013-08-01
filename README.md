@@ -1,3 +1,14 @@
+BUILD STATUS
+------------
+Current build status:
+[![Build Status](https://travis-ci.org/Islandora/islandora_bookmark.png?branch=7.x)](https://travis-ci.org/Islandora/islandora_bookmark)
+
+CI Server:
+http://jenkins.discoverygarden.ca
+
+ISLANDORA IMPORTER
+==================
+
 CONTENTS OF THIS FILE
 ---------------------
 
