@@ -250,7 +250,7 @@ function islandora_importer_batch_finished($success, array $results, array $ops)
       $level = (isset($result[2]) && array_key_exists($result[2], $levels)) ?
         $result[2] :
         WATCHDOG_INFO;
-      $link = isset($result[3])?
+      $link = isset($result[3]) ?
         $result[3] :
         '';
 
