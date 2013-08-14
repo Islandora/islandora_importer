@@ -3,6 +3,6 @@ description = Pluggable importer of object records.
 package = Islandora
 dependencies[] = islandora
 files[] = includes/importer.inc
-version = 7.x-1.2-RC1
+version = 7.x-1.2-RC2
 core = 7.x
 php = 5.2
