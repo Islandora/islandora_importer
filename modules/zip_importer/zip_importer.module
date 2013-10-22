@@ -6,6 +6,23 @@
  */
 
 /**
+ * Implements hook_menu().
+ */
+function zip_importer_menu() {
+  return array(
+    'admin/islandora/zipimporter' => array(
+      'title' => 'Zip Importer',
+      'description' => 'Configure the Zip Importer.',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('zip_importer_admin_settings_form'),
+      'access arguments' => array('administer site configuration'),
+      'file' => 'includes/admin.form.inc',
+      'type' => MENU_NORMAL_ITEM,
+    ),
+  );
+}
+
+/**
  * Implements hook_islandora_importer().
  */
 function zip_importer_islandora_importer() {
