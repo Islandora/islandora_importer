@@ -392,7 +392,7 @@ EOXML;
         return $use_filename && $has_filename ? $xml_filename : 'MODS Record';
 
       case 'DC':
-        // Check if a file was associated with MODS.
+        // Check if a file was associated with DC.
         // If it was generated some other way we ignore it.
         $has_filename = $this->isDC($xml);
         return $use_filename && $has_filename ? $xml_filename : 'DC Record';
