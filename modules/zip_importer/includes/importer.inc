@@ -165,7 +165,6 @@ class ZipBatchImporter extends IslandoraBatchImporter {
 
     return $info;
   }
-
 }
 
 /**
@@ -177,6 +176,8 @@ class ZipBatchImporter extends IslandoraBatchImporter {
 class ZipBatchImportObject extends IslandoraImportObject {
 
   protected $mods;
+  protected static $MARC2MODS;
+  protected static $DC2MODS;
 
   /**
    * Constructor.
@@ -185,6 +186,9 @@ class ZipBatchImportObject extends IslandoraImportObject {
     parent::__construct($source);
     $this->pidNamespace = $this->source['pid_namespace'];
     $this->contentModel = (array) $this->source['content_model'];
+    $transform_path = drupal_get_path('module', 'zip_importer') . '/xsl';
+    self::$MARC2MODS = "$transform_path/MARC21slim2MODS3-4.xsl";
+    self::$DC2MODS = "$transform_path/simpleDC2MODS.xsl";
   }
 
   /**
@@ -294,11 +298,17 @@ class ZipBatchImportObject extends IslandoraImportObject {
             'label' => "$dsid datastream",
             'mimetype' => $mimetype,
             'datastream_file' => file_create_url($file->uri),
+            'filename' => $name,
             'control_group' => 'M',
           ),
         );
       }
       $zip->close();
+    }
+
+    // Correct the labels of the datastreams.
+    foreach ($to_return as &$datastream) {
+      $datastream['label'] = $this->getLabel($datastream['dsid'], $datastream);
     }
 
     return $to_return;
@@ -311,45 +321,20 @@ class ZipBatchImportObject extends IslandoraImportObject {
    */
   public function getMODS() {
     if ($this->mods === NULL) {
-      // If we have an XML stream which is:
-      if (isset($this->source['object_info']['xml'])) {
-        $zip = new ZipArchive();
-        $zip->open(drupal_realpath($this->source['file']->uri));
-        $xml = $zip->getFromName($this->source['object_info']['xml']);
-        $zip->close();
-
-        if ($xml) {
-          $s_xml = new SimpleXMLElement($xml);
-          // MODS, set.
-          if ($s_xml->getName() == 'mods') {
-            $this->mods = $xml;
-          }
-          // MARCXML, transform to MODS and set.
-          elseif ($s_xml->getName() == 'record') {
-            $this->mods = static::runXSLTransform(array(
-                  'input' => $xml,
-                  'xsl' => drupal_get_path('module', 'zip_importer') . '/xsl/MARC21slim2MODS3-4.xsl',
-                ));
-          }
-          // DC, transform to MODS and set.
-          elseif ($s_xml->getName() == 'dc') {
-            $this->mods = static::runXSLTransform(array(
-                  'input' => $xml,
-                  'xsl' => drupal_get_path('module', 'zip_importer') . '/xsl/simpleDC2MODS.xsl',
-                ));
-          }
-          // Unrecognized format.
-          else {
-            // Do nothing?
-          }
-        }
+      $xml = $this->getXML();
+      if ($this->isMODS($xml)) {
+        $this->mods = $xml;
       }
-
+      elseif ($this->isMARC($xml)) {
+        $this->mods = static::runXSLTransform(array('input' => $xml, 'xsl' => self::$MARC2MODS));
+      }
+      elseif ($this->isDC($xml)) {
+        $this->mods = static::runXSLTransform(array('input' => $xml, 'xsl' => self::$DC2MODS));
+      }
       if (empty($this->mods)) {
         // If we do not yet have any XML, create a dumb MODS with just the
         // title, and set it.
         $title = pathinfo(reset($this->source['object_info']), PATHINFO_FILENAME);
-
         $this->mods = <<<EOXML
 <mods xmlns:mods="http://www.loc.gov/mods/v3" xmlns="http://www.loc.gov/mods/v3">
   <titleInfo>
@@ -359,7 +344,6 @@ class ZipBatchImportObject extends IslandoraImportObject {
 EOXML;
       }
     }
-
     return $this->mods;
   }
 
@@ -373,26 +357,107 @@ EOXML;
    */
   public function getDC() {
     if ($this->dc === NULL) {
-      // If we have an XML stream which is DC, set it.
-      if (isset($this->source['object_info']['xml'])) {
-        $zip = new ZipArchive();
-        $zip->open(drupal_realpath($this->source['file']->uri));
-        $xml = $zip->getFromName($this->source['object_info']['xml']);
-        $zip->close();
-
-        if ($xml) {
-          $s_xml = new SimpleXMLElement($xml);
-          if ($s_xml->getName() == 'dc') {
-            $this->dc = $xml;
-          }
-        }
+      $xml = $this->getXML();
+      if ($this->isDC($xml)) {
+        $this->dc = $xml;
       }
       // Otherwise, call the parent implementation (transform from MODS).
       if (empty($this->dc)) {
         parent::getDC();
       }
     }
-
     return $this->dc;
   }
+
+  /**
+   * Gets the label to be used for the given Datastream.
+   *
+   * @param string $dsid
+   *   The datastream identifier.
+   * @param array $datastream
+   *   The datatream as defined by self::getDatastreams().
+   *
+   * @return string
+   *   The label to use for the datastream.
+   */
+  protected function getLabel($dsid, $datastream) {
+    $use_filename = variable_get('zip_importer_use_filenames_as_labels', FALSE);
+    $xml_filename = $this->source['object_info']['xml'];
+    $xml = $this->getXML();
+    switch ($dsid) {
+      case 'MODS':
+        // Check if a file was associated with MODS.
+        // If it was generated some other way we ignore it.
+        $has_filename = $this->isMODS($xml);
+        return $use_filename && $has_filename ? $xml_filename : 'MODS Record';
+
+      case 'DC':
+        // Check if a file was associated with DC.
+        // If it was generated some other way we ignore it.
+        $has_filename = $this->isDC($xml);
+        return $use_filename && $has_filename ? $xml_filename : 'DC Record';
+
+      default:
+        if ($use_filename && isset($datastream['filename'])) {
+          return $datastream['filename'];
+        }
+    }
+    return isset($datastream['label']) ? $datastream['label'] : "$dsid datastream";
+  }
+
+  /**
+   * Gets the XML file content associated with the source if found.
+   */
+  protected function getXML() {
+    if (isset($this->source['object_info']['xml'])) {
+      $zip = new ZipArchive();
+      $zip->open(drupal_realpath($this->source['file']->uri));
+      $xml = $zip->getFromName($this->source['object_info']['xml']);
+      $zip->close();
+      return $xml;
+    }
+    return NULL;
+  }
+
+  /**
+   * Checks if the given file content is actually a MODS document.
+   */
+  protected function isMODS($xml) {
+    $root_elements = array('mods', 'modsCollection');
+    return in_array($this->getLocalNameOfRootElement($xml), $root_elements);
+  }
+
+  /**
+   * Checks if the given file content is actually a MARC document.
+   */
+  protected function isMARC($xml) {
+    return $this->getLocalNameOfRootElement($xml) == 'record';
+  }
+
+  /**
+   * Checks if the given file content is actually a DC document.
+   */
+  protected function isDC($xml) {
+    return $this->getLocalNameOfRootElement($xml) == 'dc';
+  }
+
+  /**
+   * Gets the local name of the root element of the given xml document.
+   *
+   * @param string $xml
+   *   An xml document.
+   *
+   * @return string
+   *   The local name of the root element, if found. Otherwise NULL.
+   */
+  protected function getLocalNameOfRootElement($xml) {
+    try {
+      $xml = new SimpleXMLElement($xml);
+      return $xml->getName();
+    }
+    catch (Exception $e) {
+      return NULL;
+    }
+  }
+
 }

@@ -361,7 +361,7 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
         'dsid' => 'MODS',
         'label' => 'MODS Record',
         'mimetype' => 'text/xml',
-        'control_group' => 'X',
+        'control_group' => 'M',
         'datastream_file' => file_create_url($file->uri),
       );
     }
