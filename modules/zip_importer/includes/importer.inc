@@ -155,7 +155,9 @@ class ZipBatchImporter extends IslandoraBatchImporter {
       $path_info = pathinfo($name);
 
       $object_key = $path_info['dirname'] . '-_-' . $path_info['filename'];
-      if (strpos($path_info['dirname'], '__MACOSX') === FALSE && isset($path_info['extension'])) {
+      if (strpos($path_info['dirname'], '__MACOSX') === FALSE
+        && isset($path_info['extension'])
+        && $path_info['extension'] != 'DS_Store') {
         $datastream_key = strtolower($path_info['extension']);
         $info[$object_key][$datastream_key] = $name;
       }
