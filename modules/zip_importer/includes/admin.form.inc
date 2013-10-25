@@ -21,7 +21,7 @@ function zip_importer_admin_settings_form(array $form, array &$form_state) {
     'zip_importer_use_filenames_as_labels' => array(
       '#type' => 'checkbox',
       '#title' => t('Use filename as Datastream label'),
-      '#description' => t('If set uploaded files will use their filename as the label of the datastream they repersent. Note that some files that get transformed like MARC to MODS will be ignored.'),
+      '#description' => t('If set uploaded files will use their filename as the label of the datastream they represent. Note that some files that get transformed like MARC to MODS will be ignored.'),
       '#default_value' => variable_get('zip_importer_use_filenames_as_labels', FALSE),
     ),
   );
