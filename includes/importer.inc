@@ -117,6 +117,25 @@ abstract class IslandoraBatchImporter implements IslandoraBatchImporterInterface
   public abstract function getNumber();
 
   /**
+   * Get an identifier.
+   *
+   * @return string
+   *   An identifier for the repo.
+   */
+  protected function getIdentifier(IslandoraTuque $tuque, $namespace) {
+    if (empty($this->context['results']['pid_cache'])) {
+      // Get enough PIDs for half of the remaining items.
+      // (plus one, so we'll always get at least one).
+      $this->context['results']['pid_cache'] = (array) $tuque->api->m->getNextPid(
+        $namespace,
+        intval((($this->context['sandbox']['max'] - $this->context['sandbox']['progress']) / 2) + 1)
+      );
+    }
+
+    return array_shift($this->context['results']['pid_cache']);
+  }
+
+  /**
    * Loop import until we have used up 1/3 of the max execution time.
    */
   public function runBatch() {
@@ -153,17 +172,9 @@ abstract class IslandoraBatchImporter implements IslandoraBatchImporterInterface
 
       $result = NULL;
       if ($item) {
-        if (empty($this->context['results']['pid_cache'])) {
-          // Get enough PIDs for half of the remaining items.
-          // (plus one, so we'll always get at least one).
-          $this->context['results']['pid_cache'] = (array) $tuque->api->m->getNextPid(
-            $item->pidNamespace,
-            intval((($this->context['sandbox']['max'] - $this->context['sandbox']['progress']) / 2) + 1)
-          );
-        }
-        $pid = array_shift($this->context['results']['pid_cache']);
+        $pid = $this->getIdentifier($tuque, $item->pidNamespace);
 
-        $results = $item->writeToFedora($pid, $this->parentPid);
+        $results = $item->writeToFedora($pid, $this->parentPid, $this->context['sandbox']);
 
         $this->context['results'] = array_merge($this->context['results'], $results);
       }
@@ -306,7 +317,7 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
    */
   public function getDC() {
     if ($this->dc === NULL) {
-      $new_dc = self::runXSLTransform(array(
+      $new_dc = static::runXSLTransform(array(
                   'xsl' => drupal_get_path('module', 'islandora_importer') . '/xsl/mods_to_dc.xsl',
                   'input' => $this->getMODS(),
                 ));
@@ -350,7 +361,7 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
         'dsid' => 'MODS',
         'label' => 'MODS Record',
         'mimetype' => 'text/xml',
-        'control_group' => 'X',
+        'control_group' => 'M',
         'datastream_file' => file_create_url($file->uri),
       );
     }
@@ -384,10 +395,25 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
 
   /**
    * Write this item to Fedora.
+   *
+   * @param string $pid
+   *   A PID to we can use to which to write our object.
+   * @param string $parent_pid
+   *   The parent to whom we should relate our object.
+   * @param array $sandbox
+   *   A reference to the batch $context['sandbox'], so we can pass information
+   *   around a little more easily (e.g. for reporting).
+   *
+   * @return array
+   *   An array of arrays, each with up to four values:
+   *   - A string containing a message which will be passed to format_string()
+   *     and in the watchdog.
+   *   - An associative array of placeholders, as used by format_string() and
+   *     watchdog, to use in the message.
+   *   - An integer representing a watchdog error level
+   *   - A string containing a rendered link.
    */
-  public function writeToFedora($pid, $parent_pid = NULL) {
-    global $user;
-
+  public function writeToFedora($pid, $parent_pid, &$sandbox) {
     // An array of arrays, containing a structure describing error
     // conditions.
     // - A translated string
@@ -401,9 +427,6 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
     $label = $this->getTitle();
     $datastreams = $this->getDatastreams($to_return, $files);
     $relationships = array();
-    $collection_pid = NULL;
-
-    $files = array();
 
     $content_models = array_unique((array) $this->contentModel);
 

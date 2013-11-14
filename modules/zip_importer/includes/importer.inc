@@ -126,7 +126,7 @@ class ZipBatchImporter extends IslandoraBatchImporter {
       'file' => $file,
       'pid_namespace' => $form_state['values']['namespace'],
       'content_model' => $content_models,
-      'object_info' => self::getIngestInfo($file),
+      'object_info' => static::getIngestInfo($file),
       'processed_objects' => array(),
     );
     return $info;
@@ -155,7 +155,9 @@ class ZipBatchImporter extends IslandoraBatchImporter {
       $path_info = pathinfo($name);
 
       $object_key = $path_info['dirname'] . '-_-' . $path_info['filename'];
-      if (strpos($path_info['dirname'], '__MACOSX') === FALSE && isset($path_info['extension'])) {
+      if (strpos($path_info['dirname'], '__MACOSX') === FALSE
+        && isset($path_info['extension'])
+        && $path_info['extension'] != 'DS_Store') {
         $datastream_key = strtolower($path_info['extension']);
         $info[$object_key][$datastream_key] = $name;
       }
@@ -165,7 +167,6 @@ class ZipBatchImporter extends IslandoraBatchImporter {
 
     return $info;
   }
-
 }
 
 /**
@@ -177,6 +178,8 @@ class ZipBatchImporter extends IslandoraBatchImporter {
 class ZipBatchImportObject extends IslandoraImportObject {
 
   protected $mods;
+  protected static $MARC2MODS;
+  protected static $DC2MODS;
 
   /**
    * Constructor.
@@ -185,6 +188,9 @@ class ZipBatchImportObject extends IslandoraImportObject {
     parent::__construct($source);
     $this->pidNamespace = $this->source['pid_namespace'];
     $this->contentModel = (array) $this->source['content_model'];
+    $transform_path = drupal_get_path('module', 'zip_importer') . '/xsl';
+    self::$MARC2MODS = "$transform_path/MARC21slim2MODS3-4.xsl";
+    self::$DC2MODS = "$transform_path/simpleDC2MODS.xsl";
   }
 
   /**
@@ -201,44 +207,52 @@ class ZipBatchImportObject extends IslandoraImportObject {
     $key = key($info['object_info']);
     $record['object_info'] = $info['processed_objects'][$key] = $info['object_info'][$key];
     unset($info['object_info'][$key]);
-    return (empty($record) ? FALSE : new self($record));
+    return (empty($record) ? FALSE : new static($record));
   }
 
   /**
    * Determine the datastream ID for the given file.
    *
-   * @return string
-   *   The string 'OBJ'. Was trying to match the mimetype against what the
-   *   DS-COMPOSITE-MODEL indicates is valid...  Some issues, though... See the
-   *   in-code comments for a bit more info.
+   * Gets info from the DS-COMPOSITE-MODELs for the selected content models
+   * and attempts to match based on detected MIME-Types.
+   *
+   * @param string $name
+   *   A filename for which to determine a mimetype.
+   *
+   * @return array
+   *   An array containing two values:
+   *   - Either boolean FALSE or the datastream ID, as mapped in the
+   *     DS-COMPOSITE-MODELs of the selected object.
+   *   - A string containing the detected mimetype of the file.
    */
-  protected function determineDSID($name, $extension) {
+  protected function determineDSIDAndMimetype($name) {
     // Something like this would be nice to have...  Need a way to indicate
     // primary assets, though...  Think about basic image, where the content
     // model can contain "OBJ" image/jpeg, "TN" image/jpeg and so on...
-    //
-    // static $mime_detect = new MimeDetect(),
-    // $dsids = NULL;
-    //
-    // if ($dsids === NULL) {
-    // module_load_include('inc', 'islandora', 'includes/utilities');
-    // $models = (array)$this->source['content_model'];
-    // $dsids = islandora_get_datastreams_requirements_from_models($models);
-    // }
-    //
+    static $mime_detect = NULL;
+    static $dsids = NULL;
+
+    if ($mime_detect === NULL || $dsids === NULL) {
+      $mime_detect = new MimeDetect();
+
+      module_load_include('inc', 'islandora', 'includes/utilities');
+      $models = (array) $this->source['content_model'];
+      $dsids = islandora_get_datastreams_requirements_from_models($models);
+    }
+
+    $mimetype = $mime_detect->getMimetype($name);
+
+    $dsid = FALSE;
     // Determine which stream this should be...  Uses the first matching, as
-    // as received from the DC-COMPOSITE.
-    // $mimetype = $mime_detect->getMimetype($name);
-    //
-    // $dsid = strtoupper($extension);
-    // foreach ($dsids as $ds => $info) {
-    // if (in_array($mimetype, $info['mime'])) {
-    // $dsid = $ds;
-    // break;
-    // }
-    // }
-    // return $dsid;
-    return 'OBJ';
+    // received from the DC-COMPOSITE.
+    foreach ($dsids as $ds => $info) {
+      if (in_array($mimetype, $info['mime'])) {
+        $dsid = $ds;
+        break;
+      }
+    }
+
+    return array($dsid, $mimetype);
   }
 
   /**
@@ -249,9 +263,6 @@ class ZipBatchImportObject extends IslandoraImportObject {
   protected function getDatastreams(&$errors = NULL, &$files = NULL) {
     module_load_include('inc', 'islandora', 'includes/utilities');
     $to_return = parent::getDatastreams($errors, $files);
-    $mime_detect = new MimeDetect();
-    $mappings = $this->getDSComp();
-    $dsids = islandora_get_datastreams_requirements_from_models((array) $this->source['content_model']);
 
     foreach ($this->source['object_info'] as $datastream => $name) {
       if ($datastream == 'xml') {
@@ -262,17 +273,19 @@ class ZipBatchImportObject extends IslandoraImportObject {
 
       // Determine which stream this should be...  Uses the first matching, as
       // as received from the DC-COMPOSITE.
-      $mimetype = $mime_detect->getMimetype($name);
+      list($dsid, $mimetype) = $this->determineDSIDAndMimetype($name);
 
-      if (!isset($mappings[$mimetype])) {
-        drupal_set_message(t('@mime not supported by this @content', array('@mime' => $mimetype, '@content' => $this->source['content_model'])), 'warning', FALSE);
+      if (!$dsid) {
+        $errors[] = array(
+          t('The detected mimetype of %filename (@mime) is not supported by any of the selected content models.'),
+          array(
+            '@mime' => $mimetype,
+            '%filename' => $name,
+          ),
+          WATCHDOG_ERROR,
+        );
         continue;
       }
-
-      // Using mapping allows us to map more thna OBJ. Will not work for Content
-      // Models with more than one datastream with the same mimetype other
-      // import modules would be better suited for those content models.
-      $dsid = $mappings[$mimetype];
 
       $zip = new ZipArchive();
       $zip->open(drupal_realpath($this->source['file']->uri));
@@ -287,15 +300,17 @@ class ZipBatchImportObject extends IslandoraImportObject {
             'label' => "$dsid datastream",
             'mimetype' => $mimetype,
             'datastream_file' => file_create_url($file->uri),
+            'filename' => $name,
             'control_group' => 'M',
           ),
         );
       }
       $zip->close();
+    }
 
-      // XXX: If multiple assets were currently possible, this "break" would
-      // not be valid.
-      // break;
+    // Correct the labels of the datastreams.
+    foreach ($to_return as &$datastream) {
+      $datastream['label'] = $this->getLabel($datastream['dsid'], $datastream);
     }
 
     return $to_return;
@@ -308,45 +323,20 @@ class ZipBatchImportObject extends IslandoraImportObject {
    */
   public function getMODS() {
     if ($this->mods === NULL) {
-      // If we have an XML stream which is:
-      if (isset($this->source['object_info']['xml'])) {
-        $zip = new ZipArchive();
-        $zip->open(drupal_realpath($this->source['file']->uri));
-        $xml = $zip->getFromName($this->source['object_info']['xml']);
-        $zip->close();
-
-        if ($xml) {
-          $s_xml = new SimpleXMLElement($xml);
-          // MODS, set.
-          if ($s_xml->getName() == 'mods') {
-            $this->mods = $xml;
-          }
-          // MARCXML, transform to MODS and set.
-          elseif ($s_xml->getName() == 'record') {
-            $this->mods = self::runXSLTransform(array(
-                  'input' => $xml,
-                  'xsl' => drupal_get_path('module', 'zip_importer') . '/xsl/MARC21slim2MODS3-4.xsl',
-                ));
-          }
-          // DC, transform to MODS and set.
-          elseif ($s_xml->getName() == 'dc') {
-            $this->mods = self::runXSLTransform(array(
-                  'input' => $xml,
-                  'xsl' => drupal_get_path('module', 'zip_importer') . '/xsl/simpleDC2MODS.xsl',
-                ));
-          }
-          // Unrecognized format.
-          else {
-            // Do nothing?
-          }
-        }
+      $xml = $this->getXML();
+      if ($this->isMODS($xml)) {
+        $this->mods = $xml;
       }
-
+      elseif ($this->isMARC($xml)) {
+        $this->mods = static::runXSLTransform(array('input' => $xml, 'xsl' => self::$MARC2MODS));
+      }
+      elseif ($this->isDC($xml)) {
+        $this->mods = static::runXSLTransform(array('input' => $xml, 'xsl' => self::$DC2MODS));
+      }
       if (empty($this->mods)) {
         // If we do not yet have any XML, create a dumb MODS with just the
         // title, and set it.
         $title = pathinfo(reset($this->source['object_info']), PATHINFO_FILENAME);
-
         $this->mods = <<<EOXML
 <mods xmlns:mods="http://www.loc.gov/mods/v3" xmlns="http://www.loc.gov/mods/v3">
   <titleInfo>
@@ -356,7 +346,6 @@ class ZipBatchImportObject extends IslandoraImportObject {
 EOXML;
       }
     }
-
     return $this->mods;
   }
 
@@ -370,52 +359,107 @@ EOXML;
    */
   public function getDC() {
     if ($this->dc === NULL) {
-      // If we have an XML stream which is DC, set it.
-      if (isset($this->source['object_info']['xml'])) {
-        $zip = new ZipArchive();
-        $zip->open(drupal_realpath($this->source['file']->uri));
-        $xml = $zip->getFromName($this->source['object_info']['xml']);
-        $zip->close();
-
-        if ($xml) {
-          $s_xml = new SimpleXMLElement($xml);
-          if ($s_xml->getName() == 'dc') {
-            $this->dc = $xml;
-          }
-        }
+      $xml = $this->getXML();
+      if ($this->isDC($xml)) {
+        $this->dc = $xml;
       }
       // Otherwise, call the parent implementation (transform from MODS).
       if (empty($this->dc)) {
         parent::getDC();
       }
     }
-
     return $this->dc;
   }
 
   /**
-   * Populates mapping array with mimetype/DSID pairs.
+   * Gets the label to be used for the given Datastream.
    *
-   * @return array
-   *   Mimetype to DSID Mapping.
+   * @param string $dsid
+   *   The datastream identifier.
+   * @param array $datastream
+   *   The datatream as defined by self::getDatastreams().
+   *
+   * @return string
+   *   The label to use for the datastream.
    */
-  public function getDSComp() {
-    $content_models = $this->contentModel;
-    reset($content_models);
-    $content_model = key($content_models);
-    $cm_object = islandora_object_load($content_model);
-    $datastream = $cm_object['DS-COMPOSITE-MODEL'];
-    $ds_comp_stream = $datastream->content;
-    $sxml = new SimpleXMLElement($ds_comp_stream);
-    $mappings = array();
-    foreach ($sxml->dsTypeModel as $ds) {
-      foreach ($ds->form as $form) {
-        $mime = (string) $form['MIME'];
-        $dsid = (string) $ds['ID'];
-        $mappings[$mime] = $dsid;
-      }
+  protected function getLabel($dsid, $datastream) {
+    $use_filename = variable_get('zip_importer_use_filenames_as_labels', FALSE);
+    $xml_filename = $this->source['object_info']['xml'];
+    $xml = $this->getXML();
+    switch ($dsid) {
+      case 'MODS':
+        // Check if a file was associated with MODS.
+        // If it was generated some other way we ignore it.
+        $has_filename = $this->isMODS($xml);
+        return $use_filename && $has_filename ? $xml_filename : 'MODS Record';
+
+      case 'DC':
+        // Check if a file was associated with DC.
+        // If it was generated some other way we ignore it.
+        $has_filename = $this->isDC($xml);
+        return $use_filename && $has_filename ? $xml_filename : 'DC Record';
+
+      default:
+        if ($use_filename && isset($datastream['filename'])) {
+          return $datastream['filename'];
+        }
     }
-    return $mappings;
+    return isset($datastream['label']) ? $datastream['label'] : "$dsid datastream";
+  }
+
+  /**
+   * Gets the XML file content associated with the source if found.
+   */
+  protected function getXML() {
+    if (isset($this->source['object_info']['xml'])) {
+      $zip = new ZipArchive();
+      $zip->open(drupal_realpath($this->source['file']->uri));
+      $xml = $zip->getFromName($this->source['object_info']['xml']);
+      $zip->close();
+      return $xml;
+    }
+    return NULL;
+  }
+
+  /**
+   * Checks if the given file content is actually a MODS document.
+   */
+  protected function isMODS($xml) {
+    $root_elements = array('mods', 'modsCollection');
+    return in_array($this->getLocalNameOfRootElement($xml), $root_elements);
+  }
+
+  /**
+   * Checks if the given file content is actually a MARC document.
+   */
+  protected function isMARC($xml) {
+    return $this->getLocalNameOfRootElement($xml) == 'record';
+  }
+
+  /**
+   * Checks if the given file content is actually a DC document.
+   */
+  protected function isDC($xml) {
+    return $this->getLocalNameOfRootElement($xml) == 'dc';
+  }
+
+  /**
+   * Gets the local name of the root element of the given xml document.
+   *
+   * @param string $xml
+   *   An xml document.
+   *
+   * @return string
+   *   The local name of the root element, if found. Otherwise NULL.
+   */
+  protected function getLocalNameOfRootElement($xml) {
+    try {
+      $xml = new SimpleXMLElement($xml);
+      return $xml->getName();
+    }
+    catch (Exception $e) {
+      return NULL;
+    }
   }
 
 }

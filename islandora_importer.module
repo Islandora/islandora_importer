@@ -41,13 +41,13 @@ function islandora_importer_get_options() {
  * Access callback for menu path.
  */
 function islandora_importer_access_callback($object) {
-  if (!$object) {
+  if (!islandora_object_access(ISLANDORA_INGEST, $object)) {
     return FALSE;
   }
   $has_import_options = count(islandora_importer_get_options()) > 0;
   // For now only permit batch importing into collections?
   $is_collection = in_array('islandora:collectionCModel', $object->models);
-  return user_access(FEDORA_INGEST) && $is_collection && $has_import_options;
+  return $is_collection && $has_import_options;
 }
 
 /**
@@ -60,14 +60,13 @@ function islandora_importer_access_callback($object) {
  *   The Drupal form definition.
  * @param array $form_state
  *   The Drupal form state.
- * @param AbstractFedoraObject $object
- *   A string containing the Fedora collection PID into which we will import
- *   citations.
+ * @param AbstractObject $collection
+ *   An AbstractObject for the collection that we are ingesting into.
  *
  * @return array
  *   The Drupal form definition.
  */
-function islandora_importer_form(array $form, array &$form_state, AbstractFedoraObject $object) {
+function islandora_importer_form(array $form, array &$form_state, AbstractObject $collection) {
   if (isset($form_state['storage']['importer'])) {
     // Importers need something like:
     // The first three correspond the the parameters to module_load_include,
@@ -96,7 +95,7 @@ function islandora_importer_form(array $form, array &$form_state, AbstractFedora
       }
 
       if (!isset($form_state['storage']['parent_pid'])) {
-        $form_state['storage']['parent_pid'] = $object->id;
+        $form_state['storage']['parent_pid'] = $collection->id;
       }
 
       $form = array_merge($form, array(
@@ -241,8 +240,8 @@ function islandora_importer_batch_finished($success, array $results, array $ops)
     unset($results['pid_cache']);
     unset($results['islandora_importer']);
 
-    $filename = file_create_filename('batch_import_results.html', 'public://');
-    $file = fopen($filename, 'w');
+    $file_object = file_save_data('', 'public://batch_import_results.html');
+    $file = fopen($file_object->uri, 'w');
     fwrite($file, '<html><body><ol>');
     $levels = watchdog_severity_levels();
     foreach ($results as $result) {
@@ -251,12 +250,12 @@ function islandora_importer_batch_finished($success, array $results, array $ops)
       $level = (isset($result[2]) && array_key_exists($result[2], $levels)) ?
         $result[2] :
         WATCHDOG_INFO;
-      $link = isset($result[3])?
+      $link = isset($result[3]) ?
         $result[3] :
         '';
 
-      fwrite($file, '<li>' . $levels[$level] . ': ' . t($message, $subs) . ((!empty($link)) ?
-        ('  ' . t('Link: !link.', array('!link' => $link))) :
+      fwrite($file, '<li>' . $levels[$level] . ': ' . format_string($message, $subs) . ((!empty($link)) ?
+        ('  ' . format_string('Link: !link.', array('!link' => $link))) :
         '') . "</li>");
 
       array_unshift($result, 'islandora_importer');
@@ -265,19 +264,26 @@ function islandora_importer_batch_finished($success, array $results, array $ops)
     fwrite($file, '</ol></body></html>');
     fclose($file);
 
+    // Make the file temporary, so it should get deleted when the cron job is
+    // run after 6 hours.
+    $file_object->status = 0;
+    file_save($file_object);
+
     if (user_access('access site reports')) {
-      drupal_set_message(t('Batch complete!  View/Download !results or see the !watchdog for details.', array(
-        '!results' => l(t('simple results'), file_create_url($filename)),
+      drupal_set_message(filter_xss(t('Batch complete!  View/Download !results or see the !watchdog for details.', array(
+        '!results' => l(t('simple results'), file_create_url($file_object->uri)),
         '!watchdog' => l(t('watchdog log'), 'admin/reports/dblog'),
-      )), 'info');
+      ))), 'info');
     }
     else {
-      drupal_set_message(t('Batch complete!  View/Download !results.', array(
-        '!results' => l(t('simple results'), file_create_url($filename)),
-      )), 'info');
+      drupal_set_message(filter_xss(t('Batch complete!  View/Download !results.', array(
+        '!results' => l(t('simple results'), file_create_url($file_object->uri)),
+      ))), 'info');
     }
   }
   else {
-    drupal_set_message("Failed operations: " . print_r($ops, TRUE), 'error');
+    drupal_set_message(t('Failed operations: @ops', array(
+      '@ops' => print_r($ops, TRUE),
+    )), 'error');
   }
 }
