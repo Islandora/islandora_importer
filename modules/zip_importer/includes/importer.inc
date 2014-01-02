@@ -433,7 +433,12 @@ EOXML;
    * Checks if the given file content is actually a MARC document.
    */
   protected function isMARC($xml) {
-    return $this->getLocalNameOfRootElement($xml) == 'record';
+    // We are checking collection here to handle the use case where a collection
+    // wrapper element is present around a singular record. This does not
+    // support multiple MARC records within a collection. This is a case that
+    // Islandora itself does not support.
+    $root_element = $this->getLocalNameOfRootElement($xml);
+    return $root_element == 'record' || $root_element == 'collection';
   }
 
   /**
