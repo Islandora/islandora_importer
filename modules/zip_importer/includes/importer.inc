@@ -328,7 +328,12 @@ class ZipBatchImportObject extends IslandoraImportObject {
         $this->mods = $xml;
       }
       elseif ($this->isMARC($xml)) {
-        $this->mods = static::runXSLTransform(array('input' => $xml, 'xsl' => self::$MARC2MODS));
+        // If it's a MARC record we need to potentially clean up any collection
+        // wrappers that come out of the XSL output before setting the contents.
+        // As documented, Islandora does not support multiple records within
+        // a single MARC collection wrapper.
+        $transformed_marc = static::runXSLTransform(array('input' => $xml, 'xsl' => self::$MARC2MODS));
+        $this->mods = $this->cleanupMARC($transformed_marc);
       }
       elseif ($this->isDC($xml)) {
         $this->mods = static::runXSLTransform(array('input' => $xml, 'xsl' => self::$DC2MODS));
@@ -467,4 +472,27 @@ EOXML;
     }
   }
 
+  /**
+   * Strips off the collection wrapper from MARC if it exists.
+   *
+   * @param string $mods_xml
+   *   The generated MODS XML from the LOC XSLT.
+   *
+   * @return string
+   *   The cleaned up MODS without the MARC collection wrapper, if it exists.
+   */
+  protected function cleanupMARC($mods_xml) {
+    $dom = new DOMDocument();
+    $dom->loadXML($mods_xml);
+    if ($dom->documentElement->tagName == 'modsCollection') {
+      $new_dom = new DOMDocument('1.0', 'UTF-8');
+      $new_dom->formatOutput = TRUE;
+      $new_node = $new_dom->importNode($dom->getElementsByTagName('mods')->item(0), TRUE);
+      $new_dom->appendChild($new_node);
+      return $new_dom->saveXML();
+    }
+    else {
+      return $mods_xml;
+    }
+  }
 }
