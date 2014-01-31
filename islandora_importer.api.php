@@ -33,12 +33,3 @@ function hook_islandora_importer() {
     ),
   );
 }
-
-/**
- * Hook to get the default datastream mime types.
- *
- * @return string
- */
-function hook_islandora_importer_primary_datastream() {
-  return "obj";
-}

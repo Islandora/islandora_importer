@@ -4,7 +4,7 @@
  * @file
  * Defines all the hooks this module implements.
  */
-define('ISLANDORA_IMPORTER_PRIMARY_DS_HOOK', 'islandora_overview_object');
+
 /**
  * Implements hook_menu().
  */
