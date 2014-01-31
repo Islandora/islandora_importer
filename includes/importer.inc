@@ -389,7 +389,6 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
         t('Failed to produce DC record for @pid.'),
       );
     }
-
     return $datastreams;
   }
 

@@ -231,28 +231,48 @@ class ZipBatchImportObject extends IslandoraImportObject {
     // model can contain "OBJ" image/jpeg, "TN" image/jpeg and so on...
     static $mime_detect = NULL;
     static $dsids = NULL;
+    $models = (array) $this->source['content_model'];
 
     if ($mime_detect === NULL || $dsids === NULL) {
       $mime_detect = new MimeDetect();
 
       module_load_include('inc', 'islandora', 'includes/utilities');
-      $models = (array) $this->source['content_model'];
       $dsids = islandora_get_datastreams_requirements_from_models($models);
     }
 
     $mimetype = $mime_detect->getMimetype($name);
-
     $dsid = FALSE;
-    // Determine which stream this should be...  Uses the first matching, as
-    // received from the DC-COMPOSITE.
+    // Determine which stream this should be, Gather together all
+    // non optional datastream ids.
     foreach ($dsids as $ds => $info) {
       if (in_array($mimetype, $info['mime'])) {
-        $dsid = $ds;
-        break;
+        // Remove optional DS by default.
+        if (!$info['optional']) {
+          $dsid[$ds] = $info;
+        }
       }
     }
-
-    return array($dsid, $mimetype);
+    // Fire off to the dirivitve hook to get the primary dsid's.
+    $hook_output = array();
+    foreach ($models as $key => $value) {
+      $lowered_model = str_replace(":", "_", $value);
+      // Invoke _islandora_derivative hook for primary DSID's.
+      $data = module_invoke_all("$lowered_model" . '_islandora_derivative');
+      islandora_as_renderable_array($data);
+      if (!empty($data)) {
+        $hook_output = array_merge_recursive($hook_output, $data);
+      }
+    }
+    $source_dsid = FALSE;
+    foreach ($dsid as $arr_key => $key_val) {
+      foreach ($hook_output as $hook_key => $hook_value) {
+        if ($hook_output[$hook_key]['source_dsid']['#markup'] == $dsid[$arr_key]['id']) {
+          // We have a match on source object, this is it.
+          $source_dsid = $hook_output[$hook_key]['source_dsid']['#markup'];
+        }
+      }
+    }
+    return array($source_dsid, $mimetype);
   }
 
   /**
