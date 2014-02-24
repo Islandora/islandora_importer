@@ -322,6 +322,7 @@ class ZipBatchImportObject extends IslandoraImportObject {
             'datastream_file' => file_create_url($file->uri),
             'filename' => $name,
             'control_group' => 'M',
+            'file' => $file,
           ),
         );
       }
