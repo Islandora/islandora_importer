@@ -76,11 +76,13 @@ abstract class IslandoraBatchImporter extends IslandoraBatchPreprocessor impleme
    *
    * Just store the passed in parameters in members.
    *
+   * @param IslandoraTuque $connection
+   *   A Tuque connection, so we can setup objects.
    * @param mixed $file
    *   May be a  bit of a misnomer...  We don't really make any assumptions
    *   about what this holds...  We just pass it along to the item class.
-   * @param array $context
-   *   An array containing the batch context.
+   * @param string $parent_pid
+   *   The PID if the parent to which the ingested objects will belong.
    */
   public function __construct(IslandoraTuque $connection, $file, $parent_pid) {
     $this->file = $file;
@@ -138,23 +140,26 @@ abstract class IslandoraBatchImporter extends IslandoraBatchPreprocessor impleme
   /**
    * Try to get the namespace from the collection policy.
    *
-   * @param IslandoraImportObject
+   * @param IslandoraImportObject $item
    *   So we can get the item's namepace, if we don't get one from a collection
    *   policy.
+   *
+   * @return string
+   *   The namespace with which the object should be ingested.
    */
   protected function getNamespace($item) {
     // Get namespace based on collection, then from item.
-    $collectionPolicies = drupal_static(__METHOD__, array());
+    $collection_policies = drupal_static(__METHOD__, array());
     $namespace = $item->pidNamespace;
-    if (module_exists('islandora_basic_collection') && !isset($collectionPolicy[$this->parentPid])) {
+    if (module_exists('islandora_basic_collection') && !isset($collection_policies[$this->parentPid])) {
       $parent = islandora_object_load($this->parentPid);
       if (isset($parent['COLLECTION_POLICY'])) {
         $policy_stream = $parent['COLLECTION_POLICY'];
-        $collectionPolicies[$this->parentPid] = new CollectionPolicy($policy_stream->content);
+        $collection_policies[$this->parentPid] = new CollectionPolicy($policy_stream->content);
       }
     }
-    if (isset($collectionPolicy[$this->parentPid])) {
-      $info = $collectionPolicy[$this->parentPid]->getContentModels();
+    if (isset($collection_policy[$this->parentPid])) {
+      $info = $collection_policy[$this->parentPid]->getContentModels();
       $applicable = array_intersect($info, drupal_map_assoc($item->getContentModels()));
       if ($applicable) {
         $first_applicable = reset($applicable);
@@ -165,6 +170,9 @@ abstract class IslandoraBatchImporter extends IslandoraBatchPreprocessor impleme
     return $namespace;
   }
 
+  /**
+   * Inherited.
+   */
   public function preprocess() {
     $preprocessed = array();
     $item_class = $this->itemClass;
@@ -422,12 +430,18 @@ class IslandoraImporterBatchObject extends IslandoraBatchObject {
   protected $importerObjectInstance = NULL;
   protected $preprocessorParameters = array();
 
+  /**
+   * Constructor.
+   */
   public function __construct(IslandoraTuque $connection, IslandoraImportObject $object, $preprocessor_parameters = array()) {
     parent::__construct(NULL, $connection->repository);
     $this->importerObjectInstance = $object;
     $this->preprocessorParameters = $preprocessor_parameters;
   }
 
+  /**
+   * Inherited.
+   */
   public function batchProcess() {
     $this->label = $this->importerObjectInstance->getTitle();
     list($datastreams, $errors, $files) = $this->importerObjectInstance->getDatastreamInfo();
@@ -445,10 +459,16 @@ class IslandoraImporterBatchObject extends IslandoraBatchObject {
     return ISLANDORA_BATCH_STATE__DONE;
   }
 
+  /**
+   * Inherited.
+   */
   public function getResources() {
     return array();
   }
 
+  /**
+   * Inherited.
+   */
   public function addRelationships() {
     $this->relationships->add(FEDORA_RELS_EXT_URI, 'isMemberOfCollection', $this->preprocessorParameters['parent_pid']);
   }
