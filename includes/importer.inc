@@ -470,6 +470,7 @@ class IslandoraImporterBatchObject extends IslandoraBatchObject {
    * Inherited.
    */
   public function addRelationships() {
+    $this->models = $this->importerObjectInstance->getContentModels();
     $this->relationships->add(FEDORA_RELS_EXT_URI, 'isMemberOfCollection', $this->preprocessorParameters['parent_pid']);
   }
 }
