@@ -149,7 +149,7 @@ abstract class IslandoraBatchImporter extends IslandoraBatchPreprocessor impleme
    */
   protected function getNamespace($item) {
     // Get namespace based on collection, then from item.
-    $collection_policies = drupal_static(__METHOD__, array());
+    $collection_policies =& drupal_static(__METHOD__, array());
     $namespace = $item->pidNamespace;
     if (module_exists('islandora_basic_collection') && !isset($collection_policies[$this->parentPid])) {
       $parent = islandora_object_load($this->parentPid);
