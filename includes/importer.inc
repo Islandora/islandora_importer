@@ -408,7 +408,7 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
    * Accessor for content models.
    */
   public function getContentModels() {
-    return array($this->contentModel);
+    return (array) $this->contentModel;
   }
 
   /**
