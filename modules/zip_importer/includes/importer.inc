@@ -255,7 +255,7 @@ class ZipBatchImportObject extends IslandoraImportObject {
     // Fire off to the dirivitve hook to get the primary dsid's.
     $hook_output = array();
     foreach ($models as $key => $value) {
-      $model_name_replacements = array(":","-");
+      $model_name_replacements = array(':', '-');
       $lowered_model = strtolower(str_replace($model_name_replacements, "_", $value));
       // Invoke _islandora_derivative hook for primary DSID's.
       $data = module_invoke_all("$lowered_model" . '_islandora_derivative');
