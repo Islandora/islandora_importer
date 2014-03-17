@@ -401,8 +401,13 @@ EOXML;
    */
   protected function getLabel($dsid, $datastream) {
     $use_filename = variable_get('zip_importer_use_filenames_as_labels', FALSE);
-    $xml_filename = $this->source['object_info']['xml'];
-    $xml = $this->getXML();
+    if (isset($this->source['object_info']['xml'])) {
+      $xml_filename = $this->source['object_info']['xml'];
+      $xml = $this->getXML();
+    }
+    else {
+      return "$dsid datastream";
+    }
     switch ($dsid) {
       case 'MODS':
         // Check if a file was associated with MODS.
