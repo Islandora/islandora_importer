@@ -252,24 +252,14 @@ class ZipBatchImportObject extends IslandoraImportObject {
         }
       }
     }
-    // Fire off to the dirivitve hook to get the primary dsid's.
-    $hook_output = array();
-    foreach ($models as $key => $value) {
-      $model_name_replacements = array(':', '-');
-      $lowered_model = strtolower(str_replace($model_name_replacements, "_", $value));
-      // Invoke _islandora_derivative hook for primary DSID's.
-      $data = module_invoke_all("$lowered_model" . '_islandora_derivative');
-      islandora_as_renderable_array($data);
-      if (!empty($data)) {
-        $hook_output = array_merge_recursive($hook_output, $data);
-      }
-    }
+    // Fire off to the derivative hook to get the primary DSID's.
+    $hook_output = islandora_invoke_hook_list(ISLANDORA_DERVIATIVE_CREATION_HOOK, $models, array());
     $source_dsid = FALSE;
     foreach ($dsid as $arr_key => $key_val) {
       foreach ($hook_output as $hook_key => $hook_value) {
-        if ($hook_output[$hook_key]['source_dsid']['#markup'] == $dsid[$arr_key]['id']) {
+        if ($hook_output[$hook_key]['source_dsid'] == $dsid[$arr_key]['id']) {
           // We have a match on source object, this is it.
-          $source_dsid = $hook_output[$hook_key]['source_dsid']['#markup'];
+          $source_dsid = $hook_output[$hook_key]['source_dsid'];
         }
       }
     }
