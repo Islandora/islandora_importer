@@ -226,6 +226,7 @@ class ZipBatchImportObject extends IslandoraImportObject {
    *   - A string containing the detected mimetype of the file.
    */
   protected function determineDSIDAndMimetype($name) {
+    module_load_include('inc', 'islandora', 'includes/utilities');
     // Something like this would be nice to have...  Need a way to indicate
     // primary assets, though...  Think about basic image, where the content
     // model can contain "OBJ" image/jpeg, "TN" image/jpeg and so on...
@@ -235,8 +236,6 @@ class ZipBatchImportObject extends IslandoraImportObject {
 
     if ($mime_detect === NULL || $dsids === NULL) {
       $mime_detect = new MimeDetect();
-
-      module_load_include('inc', 'islandora', 'includes/utilities');
       $dsids = islandora_get_datastreams_requirements_from_models($models);
     }
 
