@@ -226,6 +226,7 @@ class ZipBatchImportObject extends IslandoraImportObject {
    *   - A string containing the detected mimetype of the file.
    */
   protected function determineDSIDAndMimetype($name) {
+    module_load_include('inc', 'islandora', 'includes/utilities');
     // Something like this would be nice to have...  Need a way to indicate
     // primary assets, though...  Think about basic image, where the content
     // model can contain "OBJ" image/jpeg, "TN" image/jpeg and so on...
@@ -235,8 +236,6 @@ class ZipBatchImportObject extends IslandoraImportObject {
 
     if ($mime_detect === NULL || $dsids === NULL) {
       $mime_detect = new MimeDetect();
-
-      module_load_include('inc', 'islandora', 'includes/utilities');
       $dsids = islandora_get_datastreams_requirements_from_models($models);
     }
 
@@ -252,24 +251,14 @@ class ZipBatchImportObject extends IslandoraImportObject {
         }
       }
     }
-    // Fire off to the dirivitve hook to get the primary dsid's.
-    $hook_output = array();
-    foreach ($models as $key => $value) {
-      $model_name_replacements = array(':', '-');
-      $lowered_model = strtolower(str_replace($model_name_replacements, "_", $value));
-      // Invoke _islandora_derivative hook for primary DSID's.
-      $data = module_invoke_all("$lowered_model" . '_islandora_derivative');
-      islandora_as_renderable_array($data);
-      if (!empty($data)) {
-        $hook_output = array_merge_recursive($hook_output, $data);
-      }
-    }
+    // Fire off to the derivative hook to get the primary DSID's.
+    $hook_output = islandora_invoke_hook_list(ISLANDORA_DERVIATIVE_CREATION_HOOK, $models, array());
     $source_dsid = FALSE;
     foreach ($dsid as $arr_key => $key_val) {
       foreach ($hook_output as $hook_key => $hook_value) {
-        if ($hook_output[$hook_key]['source_dsid']['#markup'] == $dsid[$arr_key]['id']) {
+        if (isset($hook_output[$hook_key]['source_dsid']) && $hook_output[$hook_key]['source_dsid'] == $dsid[$arr_key]['id']) {
           // We have a match on source object, this is it.
-          $source_dsid = $hook_output[$hook_key]['source_dsid']['#markup'];
+          $source_dsid = $hook_output[$hook_key]['source_dsid'];
         }
       }
     }
@@ -411,8 +400,13 @@ EOXML;
    */
   protected function getLabel($dsid, $datastream) {
     $use_filename = variable_get('zip_importer_use_filenames_as_labels', FALSE);
-    $xml_filename = $this->source['object_info']['xml'];
-    $xml = $this->getXML();
+    if (isset($this->source['object_info']['xml'])) {
+      $xml_filename = $this->source['object_info']['xml'];
+      $xml = $this->getXML();
+    }
+    else {
+      return "$dsid datastream";
+    }
     switch ($dsid) {
       case 'MODS':
         // Check if a file was associated with MODS.
