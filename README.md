@@ -1,47 +1,44 @@
-BUILD STATUS
-------------
-Current build status:
-[![Build Status](https://travis-ci.org/Islandora/islandora_importer.png?branch=7.x)](https://travis-ci.org/Islandora/islandora_importer)
+# Islandora Importer [![Build Status](https://travis-ci.org/Islandora/islandora_importer.png?branch=7.x)](https://travis-ci.org/Islandora/islandora_importer)
 
-CI Server:
-http://jenkins.discoverygarden.ca
+## Introduction 
 
-ISLANDORA IMPORTER
-==================
+Made primarily for ingesting objects described by MODS and DC, and currently imports ZIP files.
 
-CONTENTS OF THIS FILE
----------------------
+## Requirements
 
- * summary
- * requirements
- * installation
+This module requires the following modules/libraries:
 
+* [Islandora](https://github.com/islandora/islandora)
+* [Tuque](https://github.com/islandora/tuque)
+* [Islandora Basic Collection](https://github.com/Islandora/islandora_solution_pack_collection Zip file)
 
-SUMMARY
--------
+## Installation
 
-Islandora Importer
+Install as usual, see [this](https://drupal.org/documentation/install/modules-themes/modules-7) for further information.
 
-Made primarily for ingesting objects described by MODS and DC.
+## Configuration
 
-A number of importer modules have been included, which should be described in
-greater detail where they reside (in the "modules" directory):
-- RIS*
-- EndNote XML*
-- Pubmed*
-- Digital Object Identifiers (DOI)*
-- Zip file
+Select whether or not to 'Use filename as Datastream label' in Administration » Islandora » Zip Importer (admin/islandora/zipimporter).
 
-(* Currently, only creates "citation" documents, as used in the
-islandora_scholar module)
+![Configuration](http://i.imgur.com/za1Hpmq.png)
 
-REQUIREMENTS
-------------
+## Troubleshooting/Issues
 
-The following Drupal modules are required:
- * islandora
+Having problems or solved a problem? Check out the Islandora google groups for a solution.
 
-INSTALLATION
-------------
+* [Islandora Group](https://groups.google.com/forum/?hl=en&fromgroups#!forum/islandora)
+* [Islandora Dev Group](https://groups.google.com/forum/?hl=en&fromgroups#!forum/islandora-dev)
 
-Enable the module.
+## Maintainers/Sponsors
+
+Current maintainers:
+
+* [Adam Vessey](https://github.com/adam-vessey)
+
+## Development
+
+If you would like to contribute to this module, please check out our helpful [Documentation for Developers](https://github.com/Islandora/islandora/wiki#wiki-documentation-for-developers) info, as well as our [Developers](http://islandora.ca/developers) section on the Islandora.ca site.
+
+## License
+
+[GPLv3](http://www.gnu.org/licenses/gpl-3.0.txt)
