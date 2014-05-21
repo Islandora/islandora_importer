@@ -424,6 +424,13 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
       $files,
     );
   }
+
+  /**
+   * Add relationships to the given object being created.
+   */
+  public function modifyRelationships(AbstractObject $object) {
+    $object->models = $this->getContentModels();
+  }
 }
 
 class IslandoraImporterBatchObject extends IslandoraBatchObject {
@@ -470,7 +477,7 @@ class IslandoraImporterBatchObject extends IslandoraBatchObject {
    * Inherited.
    */
   public function addRelationships() {
-    $this->models = $this->importerObjectInstance->getContentModels();
     $this->relationships->add(FEDORA_RELS_EXT_URI, 'isMemberOfCollection', $this->preprocessorParameters['parent_pid']);
+    $this->importerObjectInstance->modifyRelationships($this);
   }
 }
