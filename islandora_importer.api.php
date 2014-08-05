@@ -33,3 +33,15 @@ function hook_islandora_importer() {
     ),
   );
 }
+
+/**
+ * Alter hook to hide/update those available for user selection.
+ *
+ * @param array $options
+ *   The array of options resulting from calling hook_islandora_importer().
+ *
+ * @see hook_islandora_importer()
+ */
+function hook_islandora_importer_alter(array &$options) {
+  unset($options['my_replaced_importer']);
+}
