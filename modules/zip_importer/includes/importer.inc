@@ -500,6 +500,7 @@ EOXML;
    * Checks if the given file content is actually a Darwin Core document
    */
   protected function isDWC($xml) {
+  	$rootdoc = $this->getLocalNameOfRootElement($xml);
   	return (($rootdoc=='DarwinRecordSet')||($rootdoc=='SimpleDarwinRecordSet'));
   }
 
