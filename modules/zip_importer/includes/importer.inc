@@ -277,25 +277,25 @@ class ZipBatchImportObject extends IslandoraImportObject {
     $to_return = parent::getDatastreams($errors, $files);
 
     foreach ($this->source['object_info'] as $datastream => $name) {
-      $do_determineDSIDAndMimetype = TRUE;
+      $doDetermineDSIDAndMimetype = TRUE;
       if ($datastream == 'xml') {
-      	
-      	if ($this->isDWC($this->getXML())) {
-      		// for Darwin Core file, manually set the datastream to DWC and skips the detection
-      		$do_determineDSIDAndMimetype = FALSE;
-      		$dsid = 'DWC';
-      		$mimetype = 'text/xml';
-      	} else {
-	      	// XML streams are handled via the parent implementation,
-	      	// (via get_{mods,dc}()) so let's go to the next item.
-	      	continue;
-      	}
+
+        if ($this->isDWC($this->getXML())) {
+          // for Darwin Core file, manually set the datastream to DWC and skips the detection
+          $doDetermineDSIDAndMimetype = FALSE;
+          $dsid = 'DWC';
+          $mimetype = 'text/xml';
+        } else {
+          // XML streams are handled via the parent implementation,
+          // (via get_{mods,dc}()) so let's go to the next item.
+          continue;
+        }
       }
 
-      if ($do_determineDSIDAndMimetype) {
-	      // Determine which stream this should be...  Uses the first matching, as
-	      // as received from the DC-COMPOSITE.
-	      list($dsid, $mimetype) = $this->determineDSIDAndMimetype($name);
+      if ($doDetermineDSIDAndMimetype) {
+          // Determine which stream this should be...  Uses the first matching, as
+          // as received from the DC-COMPOSITE.
+          list($dsid, $mimetype) = $this->determineDSIDAndMimetype($name);
       }
 
       if (!$dsid) {
@@ -361,7 +361,8 @@ class ZipBatchImportObject extends IslandoraImportObject {
       }
       elseif ($this->isDC($xml)) {
         $this->mods = static::runXSLTransform(array('input' => $xml, 'xsl' => self::$DC2MODS));
-      } elseif ($this->isDWC($xml)) {
+      }
+      elseif ($this->isDWC($xml)) {
       	$this->mods = static::runXSLTransform(array('input' => $this->getDC(), 'xsl' => self::$DC2MODS));
       }
       if (empty($this->mods)) {
@@ -393,7 +394,8 @@ EOXML;
       $xml = $this->getXML();
       if ($this->isDC($xml)) {
         $this->dc = $xml;
-      } elseif ($this->isDWC($xml)) {
+      }
+      elseif ($this->isDWC($xml)) {
       	$this->dc = static::runXSLTransform(array('input' => $xml, 'xsl' => self::$DWC2DC));
       }
       // Otherwise, call the parent implementation (transform from MODS).
@@ -420,9 +422,9 @@ EOXML;
     if (isset($this->source['object_info']['xml'])) {
       $xml_filename = $this->source['object_info']['xml'];
       $xml = $this->getXML();
-      
+
       if ($this->isDWC($datastream)) {
-      	$dsid = 'DWC';
+        $dsid = 'DWC';
       }
     }
     else {
@@ -446,7 +448,7 @@ EOXML;
         // If it was generated some other way we ignore it
         $has_filename = $this->isDWC($xml);
         return $use_filename && $has_filename ? $xml_filename : 'Darwin Core Record';
-        
+
       default:
         if ($use_filename && isset($datastream['filename'])) {
           return $datastream['filename'];
@@ -495,13 +497,13 @@ EOXML;
   protected function isDC($xml) {
     return $this->getLocalNameOfRootElement($xml) == 'dc';
   }
-  
+
   /**
-   * Checks if the given file content is actually a Darwin Core document
+   * Checks if the given file content is actually a Darwin Core document.
    */
   protected function isDWC($xml) {
-  	$rootdoc = $this->getLocalNameOfRootElement($xml);
-  	return (($rootdoc=='DarwinRecordSet')||($rootdoc=='SimpleDarwinRecordSet'));
+    $rootdoc = $this->getLocalNameOfRootElement($xml);
+    return (($rootdoc == 'DarwinRecordSet')||($rootdoc=='SimpleDarwinRecordSet'));
   }
 
   /**
