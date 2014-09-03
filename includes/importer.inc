@@ -182,7 +182,8 @@ abstract class IslandoraBatchImporter extends IslandoraBatchPreprocessor impleme
       $item = $item_class::getOne($this->file);
       if ($item) {
         $this->parameters['namespace'] = $this->getNamespace($item);
-        $preprocessed[] = $object = new IslandoraImporterBatchObject($this->connection, $item, $this->parameters);
+        $wrapper = $item->getWrapperClass();
+        $preprocessed[] = $object = new $wrapper($this->connection, $item, $this->parameters);
         $object->addRelationships();
         $this->addToDatabase($object, $object->getResources());
       }
@@ -430,6 +431,18 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
    */
   public function modifyRelationships(AbstractObject $object) {
     $object->models = $this->getContentModels();
+  }
+
+  /**
+   * Get the name of the class which wraps this.
+   *
+   * Should be a subclass of IslandoraImporterBatchObject.
+   *
+   * @return string
+   *   The name of class.
+   */
+  public function getWrapperClass() {
+    return 'IslandoraImporterBatchObject';
   }
 }
 
