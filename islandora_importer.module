@@ -109,7 +109,7 @@ function islandora_importer_form(array $form, array &$form_state, AbstractObject
         ),
         'submit' => array(
           '#type' => 'submit',
-          '#value' => t('Submit'),
+          '#value' => t('Next'),
         ),
       ));
 
