@@ -281,7 +281,7 @@ class ZipBatchImportObject extends IslandoraImportObject {
       if ($datastream == 'xml') {
 
         if ($this->isDWC($this->getXML())) {
-          // For Darwin Core file, datastream to DWC and skips the detection
+          // For Darwin Core file, datastream to DWC and skips the detection.
           $do_determine_dsid_and_mimetype = FALSE;
           $dsid = 'DWC';
           $mimetype = 'text/xml';
