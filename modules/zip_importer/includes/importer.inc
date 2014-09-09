@@ -12,6 +12,8 @@
 class ZipBatchImporter extends IslandoraBatchImporter {
 
   protected $itemClass = 'ZipBatchImportObject';
+  // Title to use for the form fieldset.
+  protected static $formTitle = '';
 
   /**
    * Get the number of items to import from $this->file.
@@ -57,7 +59,7 @@ class ZipBatchImporter extends IslandoraBatchImporter {
     return array(
       'fs' => array(
         '#type' => 'fieldset',
-        '#title' => t('Zip Batch Importer'),
+        '#title' => static::$formTitle ? static::$formTitle : t('Zip Batch Importer'),
         '#description' => t('Select the file containing the assets and metadata to import. Assets and metadata will be matched together based on the portion of the filename without the extension - e.g. my_file.xml and my_file.pdf would be combined into a single object.'),
         'file' => array(
           '#type' => 'managed_file',
@@ -110,9 +112,9 @@ class ZipBatchImporter extends IslandoraBatchImporter {
   }
 
   /**
-   * Get the required info to pass into the file parameter of the constructor.
+   * Get the info for the source parameter for the itemClass factory.
    *
-   * @see IslandoraBatchImporter::getBatchInfo()
+   * @see IslandoraBatchImporterInterface::getBatchInfo()
    */
   public static function getBatchInfo(array &$form_state) {
     // Load the file.
@@ -133,7 +135,7 @@ class ZipBatchImporter extends IslandoraBatchImporter {
   }
 
   /**
-   * Get ingest info.
+   * Helper function for getting info on the zip file..
    *
    * @return array
    *   The ingest info.
@@ -198,7 +200,7 @@ class ZipBatchImportObject extends IslandoraImportObject {
   /**
    * Get an item from the source.
    *
-   * @see IslandoraImportObject::getOne()
+   * @see IslandoraImportObjectInterface::getOne()
    */
   public static function getOne(&$info) {
     $record = array(

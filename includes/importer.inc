@@ -21,7 +21,10 @@ interface IslandoraBatchImporterInterface {
   public static function readyForBatch(array &$form_state);
 
   /**
-   * Get the required info to pass into the file parameter of the constructor.
+   * Get the info for the source parameter for the itemClass factory.
+   *
+   * This is also used to populate the file parameter to the Importer's
+   * constructor.
    *
    * @param array $form_state
    *   An array containing the form state (very likely resulting from the
