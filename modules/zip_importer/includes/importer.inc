@@ -12,8 +12,6 @@
 class ZipBatchImporter extends IslandoraBatchImporter {
 
   protected $itemClass = 'ZipBatchImportObject';
-  // Title to use for the form fieldset.
-  protected static $formTitle = '';
 
   /**
    * Get the number of items to import from $this->file.
@@ -59,7 +57,7 @@ class ZipBatchImporter extends IslandoraBatchImporter {
     return array(
       'fs' => array(
         '#type' => 'fieldset',
-        '#title' => static::$formTitle ? static::$formTitle : t('Zip Batch Importer'),
+        '#title' => t('Zip Batch Importer'),
         '#description' => t('Select the file containing the assets and metadata to import. Assets and metadata will be matched together based on the portion of the filename without the extension - e.g. my_file.xml and my_file.pdf would be combined into a single object.'),
         'file' => array(
           '#type' => 'managed_file',
