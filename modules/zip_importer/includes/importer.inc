@@ -110,9 +110,9 @@ class ZipBatchImporter extends IslandoraBatchImporter {
   }
 
   /**
-   * Get the required info to pass into the file parameter of the constructor.
+   * Get the info for the source parameter for the itemClass factory.
    *
-   * @see IslandoraBatchImporter::getBatchInfo()
+   * @see IslandoraBatchImporterInterface::getBatchInfo()
    */
   public static function getBatchInfo(array &$form_state) {
     // Load the file.
@@ -133,7 +133,7 @@ class ZipBatchImporter extends IslandoraBatchImporter {
   }
 
   /**
-   * Get ingest info.
+   * Helper function for getting info on the zip file..
    *
    * @return array
    *   The ingest info.
@@ -198,7 +198,7 @@ class ZipBatchImportObject extends IslandoraImportObject {
   /**
    * Get an item from the source.
    *
-   * @see IslandoraImportObject::getOne()
+   * @see IslandoraImportObjectInterface::getOne()
    */
   public static function getOne(&$info) {
     $record = array(
