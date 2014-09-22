@@ -183,6 +183,13 @@ class ZipBatchImportObject extends IslandoraImportObject {
   protected static $DWC2DC;
 
   /**
+   * An AbstractObject for use in calling hooks... Should *NOT* be ingested.
+   *
+   * @var
+   */
+  protected $skeleton;
+
+  /**
    * Constructor.
    */
   protected function __construct($source) {
@@ -193,6 +200,9 @@ class ZipBatchImportObject extends IslandoraImportObject {
     self::$MARC2MODS = "$transform_path/MARC21slim2MODS3-4.xsl";
     self::$DC2MODS = "$transform_path/simpleDC2MODS.xsl";
     self::$DWC2DC = "$transform_path/dwc_to_dc.xsl";
+
+    $this->skeleton = islandora_get_tuque_connection()->repository->constructObject('temp:pid');
+    $this->skeleton->models = $this->contentModel;
   }
 
   /**
@@ -253,8 +263,9 @@ class ZipBatchImportObject extends IslandoraImportObject {
         }
       }
     }
+
     // Fire off to the derivative hook to get the primary DSID's.
-    $hook_output = islandora_invoke_hook_list(ISLANDORA_DERVIATIVE_CREATION_HOOK, $models, array());
+    $hook_output = islandora_invoke_hook_list(ISLANDORA_DERVIATIVE_CREATION_HOOK, $models, array($this->skeleton));
     $source_dsid = FALSE;
     foreach ($dsid as $arr_key => $key_val) {
       foreach ($hook_output as $hook_key => $hook_value) {
