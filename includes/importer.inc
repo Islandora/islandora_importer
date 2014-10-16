@@ -161,9 +161,9 @@ abstract class IslandoraBatchImporter extends IslandoraBatchPreprocessor impleme
         $collection_policies[$this->parentPid] = new CollectionPolicy($policy_stream->content);
       }
     }
-    if (isset($collection_policy[$this->parentPid])) {
-      $info = $collection_policy[$this->parentPid]->getContentModels();
-      $applicable = array_intersect($info, drupal_map_assoc($item->getContentModels()));
+    if (isset($collection_policies[$this->parentPid])) {
+      $info = $collection_policies[$this->parentPid]->getContentModels();
+      $applicable = array_intersect_key($info, drupal_map_assoc($item->getContentModels()));
       if ($applicable) {
         $first_applicable = reset($applicable);
         $namespace = $first_applicable['namespace'];
