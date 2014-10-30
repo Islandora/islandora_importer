@@ -468,6 +468,11 @@ class IslandoraImporterBatchObject extends IslandoraBatchObject {
   public function batchProcess() {
     $this->label = $this->importerObjectInstance->getTitle();
     list($datastreams, $errors, $files) = $this->importerObjectInstance->getDatastreamInfo();
+    foreach ($files as $file) {
+      $file->status &= ~FILE_STATUS_PERMANENT;
+      file_save($file);
+      file_usage_add($file, 'islandora_batch', 'islandora_batch_object', $this->getBatchId());
+    }
     foreach ($datastreams as $ds) {
       $ds_uri = isset($ds['file']) ?
         $ds['file']->uri :
