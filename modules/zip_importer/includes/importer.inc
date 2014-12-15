@@ -515,7 +515,7 @@ EOXML;
    */
   protected function isDWC($xml) {
     $rootdoc = $this->getLocalNameOfRootElement($xml);
-    return (($rootdoc == 'DarwinRecordSet') || ($rootdoc == 'SimpleDarwinRecordSet'));
+    return (($rootdoc == 'DarwinRecordSet') || ($rootdoc == 'SimpleDarwinRecordSet') || ($rootdoc == 'SimpleDarwinRecord'));
   }
 
   /**
