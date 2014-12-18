@@ -110,9 +110,9 @@ class ZipBatchImporter extends IslandoraBatchImporter {
   }
 
   /**
-   * Get the required info to pass into the file parameter of the constructor.
+   * Get the info for the source parameter for the itemClass factory.
    *
-   * @see IslandoraBatchImporter::getBatchInfo()
+   * @see IslandoraBatchImporterInterface::getBatchInfo()
    */
   public static function getBatchInfo(array &$form_state) {
     // Load the file.
@@ -133,7 +133,7 @@ class ZipBatchImporter extends IslandoraBatchImporter {
   }
 
   /**
-   * Get ingest info.
+   * Helper function for getting info on the zip file..
    *
    * @return array
    *   The ingest info.
@@ -180,6 +180,14 @@ class ZipBatchImportObject extends IslandoraImportObject {
   protected $mods;
   protected static $MARC2MODS;
   protected static $DC2MODS;
+  protected static $DWC2DC;
+
+  /**
+   * An AbstractObject for use in calling hooks... Should *NOT* be ingested.
+   *
+   * @var
+   */
+  protected $skeleton;
 
   /**
    * Constructor.
@@ -191,12 +199,16 @@ class ZipBatchImportObject extends IslandoraImportObject {
     $transform_path = drupal_get_path('module', 'zip_importer') . '/xsl';
     self::$MARC2MODS = "$transform_path/MARC21slim2MODS3-4.xsl";
     self::$DC2MODS = "$transform_path/simpleDC2MODS.xsl";
+    self::$DWC2DC = "$transform_path/dwc_to_dc.xsl";
+
+    $this->skeleton = islandora_get_tuque_connection()->repository->constructObject('temp:pid');
+    $this->skeleton->models = $this->contentModel;
   }
 
   /**
    * Get an item from the source.
    *
-   * @see IslandoraImportObject::getOne()
+   * @see IslandoraImportObjectInterface::getOne()
    */
   public static function getOne(&$info) {
     $record = array(
@@ -226,33 +238,44 @@ class ZipBatchImportObject extends IslandoraImportObject {
    *   - A string containing the detected mimetype of the file.
    */
   protected function determineDSIDAndMimetype($name) {
+    module_load_include('inc', 'islandora', 'includes/utilities');
     // Something like this would be nice to have...  Need a way to indicate
     // primary assets, though...  Think about basic image, where the content
     // model can contain "OBJ" image/jpeg, "TN" image/jpeg and so on...
     static $mime_detect = NULL;
     static $dsids = NULL;
+    $models = (array) $this->source['content_model'];
 
     if ($mime_detect === NULL || $dsids === NULL) {
       $mime_detect = new MimeDetect();
-
-      module_load_include('inc', 'islandora', 'includes/utilities');
-      $models = (array) $this->source['content_model'];
       $dsids = islandora_get_datastreams_requirements_from_models($models);
     }
 
     $mimetype = $mime_detect->getMimetype($name);
-
     $dsid = FALSE;
-    // Determine which stream this should be...  Uses the first matching, as
-    // received from the DC-COMPOSITE.
+    // Determine which stream this should be, Gather together all
+    // non optional datastream ids.
     foreach ($dsids as $ds => $info) {
       if (in_array($mimetype, $info['mime'])) {
-        $dsid = $ds;
-        break;
+        // Remove optional DS by default.
+        if (!$info['optional']) {
+          $dsid[$ds] = $info;
+        }
       }
     }
 
-    return array($dsid, $mimetype);
+    // Fire off to the derivative hook to get the primary DSID's.
+    $hook_output = islandora_invoke_hook_list(ISLANDORA_DERVIATIVE_CREATION_HOOK, $models, array($this->skeleton));
+    $source_dsid = FALSE;
+    foreach ($dsid as $arr_key => $key_val) {
+      foreach ($hook_output as $hook_key => $hook_value) {
+        if (isset($hook_output[$hook_key]['source_dsid']) && $hook_output[$hook_key]['source_dsid'] == $dsid[$arr_key]['id']) {
+          // We have a match on source object, this is it.
+          $source_dsid = $hook_output[$hook_key]['source_dsid'];
+        }
+      }
+    }
+    return array($source_dsid, $mimetype);
   }
 
   /**
@@ -265,15 +288,27 @@ class ZipBatchImportObject extends IslandoraImportObject {
     $to_return = parent::getDatastreams($errors, $files);
 
     foreach ($this->source['object_info'] as $datastream => $name) {
+      $do_determine_dsid_and_mimetype = TRUE;
       if ($datastream == 'xml') {
-        // XML streams are handled via the parent implementation,
-        // (via get_{mods,dc}()) so let's go to the next item.
-        continue;
+
+        if ($this->isDWC($this->getXML())) {
+          // For Darwin Core file, datastream to DWC and skips the detection.
+          $do_determine_dsid_and_mimetype = FALSE;
+          $dsid = 'DWC';
+          $mimetype = 'text/xml';
+        }
+        else {
+          // XML streams are handled via the parent implementation,
+          // (via get_{mods,dc}()) so let's go to the next item.
+          continue;
+        }
       }
 
-      // Determine which stream this should be...  Uses the first matching, as
-      // as received from the DC-COMPOSITE.
-      list($dsid, $mimetype) = $this->determineDSIDAndMimetype($name);
+      if ($do_determine_dsid_and_mimetype) {
+        // Determine which stream this should be...  Uses the first matching, as
+        // as received from the DC-COMPOSITE.
+        list($dsid, $mimetype) = $this->determineDSIDAndMimetype($name);
+      }
 
       if (!$dsid) {
         $errors[] = array(
@@ -302,6 +337,7 @@ class ZipBatchImportObject extends IslandoraImportObject {
             'datastream_file' => file_create_url($file->uri),
             'filename' => $name,
             'control_group' => 'M',
+            'file' => $file,
           ),
         );
       }
@@ -328,10 +364,18 @@ class ZipBatchImportObject extends IslandoraImportObject {
         $this->mods = $xml;
       }
       elseif ($this->isMARC($xml)) {
-        $this->mods = static::runXSLTransform(array('input' => $xml, 'xsl' => self::$MARC2MODS));
+        // If it's a MARC record we need to potentially clean up any collection
+        // wrappers that come out of the XSL output before setting the contents.
+        // As documented, Islandora does not support multiple records within
+        // a single MARC collection wrapper.
+        $transformed_marc = static::runXSLTransform(array('input' => $xml, 'xsl' => self::$MARC2MODS));
+        $this->mods = $this->cleanupMARC($transformed_marc);
       }
       elseif ($this->isDC($xml)) {
         $this->mods = static::runXSLTransform(array('input' => $xml, 'xsl' => self::$DC2MODS));
+      }
+      elseif ($this->isDWC($xml)) {
+        $this->mods = static::runXSLTransform(array('input' => $this->getDC(), 'xsl' => self::$DC2MODS));
       }
       if (empty($this->mods)) {
         // If we do not yet have any XML, create a dumb MODS with just the
@@ -363,6 +407,9 @@ EOXML;
       if ($this->isDC($xml)) {
         $this->dc = $xml;
       }
+      elseif ($this->isDWC($xml)) {
+        $this->dc = static::runXSLTransform(array('input' => $xml, 'xsl' => self::$DWC2DC));
+      }
       // Otherwise, call the parent implementation (transform from MODS).
       if (empty($this->dc)) {
         parent::getDC();
@@ -384,8 +431,17 @@ EOXML;
    */
   protected function getLabel($dsid, $datastream) {
     $use_filename = variable_get('zip_importer_use_filenames_as_labels', FALSE);
-    $xml_filename = $this->source['object_info']['xml'];
-    $xml = $this->getXML();
+    if (isset($this->source['object_info']['xml'])) {
+      $xml_filename = $this->source['object_info']['xml'];
+      $xml = $this->getXML();
+
+      if ($this->isDWC($datastream)) {
+        $dsid = 'DWC';
+      }
+    }
+    else {
+      return "$dsid datastream";
+    }
     switch ($dsid) {
       case 'MODS':
         // Check if a file was associated with MODS.
@@ -398,6 +454,12 @@ EOXML;
         // If it was generated some other way we ignore it.
         $has_filename = $this->isDC($xml);
         return $use_filename && $has_filename ? $xml_filename : 'DC Record';
+
+      case "DWC":
+        // Check if a file was associated with DarwinCore.
+        // If it was generated some other way we ignore it.
+        $has_filename = $this->isDWC($xml);
+        return $use_filename && $has_filename ? $xml_filename : 'Darwin Core Record';
 
       default:
         if ($use_filename && isset($datastream['filename'])) {
@@ -433,7 +495,12 @@ EOXML;
    * Checks if the given file content is actually a MARC document.
    */
   protected function isMARC($xml) {
-    return $this->getLocalNameOfRootElement($xml) == 'record';
+    // We are checking collection here to handle the use case where a collection
+    // wrapper element is present around a singular record. This does not
+    // support multiple MARC records within a collection. This is a case that
+    // Islandora itself does not support.
+    $root_element = $this->getLocalNameOfRootElement($xml);
+    return $root_element == 'record' || $root_element == 'collection';
   }
 
   /**
@@ -441,6 +508,14 @@ EOXML;
    */
   protected function isDC($xml) {
     return $this->getLocalNameOfRootElement($xml) == 'dc';
+  }
+
+  /**
+   * Checks if the given file content is actually a Darwin Core document.
+   */
+  protected function isDWC($xml) {
+    $rootdoc = $this->getLocalNameOfRootElement($xml);
+    return (($rootdoc == 'DarwinRecordSet') || ($rootdoc == 'SimpleDarwinRecordSet') || ($rootdoc == 'SimpleDarwinRecord'));
   }
 
   /**
@@ -462,4 +537,27 @@ EOXML;
     }
   }
 
+  /**
+   * Strips off the collection wrapper from MARC if it exists.
+   *
+   * @param string $mods_xml
+   *   The generated MODS XML from the LOC XSLT.
+   *
+   * @return string
+   *   The cleaned up MODS without the MARC collection wrapper, if it exists.
+   */
+  protected function cleanupMARC($mods_xml) {
+    $dom = new DOMDocument();
+    $dom->loadXML($mods_xml);
+    if ($dom->documentElement->tagName == 'modsCollection') {
+      $new_dom = new DOMDocument('1.0', 'UTF-8');
+      $new_dom->formatOutput = TRUE;
+      $new_node = $new_dom->importNode($dom->getElementsByTagName('mods')->item(0), TRUE);
+      $new_dom->appendChild($new_node);
+      return $new_dom->saveXML();
+    }
+    else {
+      return $mods_xml;
+    }
+  }
 }

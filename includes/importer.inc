@@ -21,7 +21,10 @@ interface IslandoraBatchImporterInterface {
   public static function readyForBatch(array &$form_state);
 
   /**
-   * Get the required info to pass into the file parameter of the constructor.
+   * Get the info for the source parameter for the itemClass factory.
+   *
+   * This is also used to populate the file parameter to the Importer's
+   * constructor.
    *
    * @param array $form_state
    *   An array containing the form state (very likely resulting from the
@@ -41,13 +44,7 @@ interface IslandoraBatchImporterInterface {
  *
  * @author adam@discoverygarden.ca
  */
-abstract class IslandoraBatchImporter implements IslandoraBatchImporterInterface {
-  /**
-   * A string containing the name of a timer used in the run_batch method.
-   * @var string
-   */
-  protected $timerName = 'islandora_batch_import';
-
+abstract class IslandoraBatchImporter extends IslandoraBatchPreprocessor implements IslandoraBatchImporterInterface {
   /**
    * A string containing the name of the class to actually do the heavy
    * lifting.
@@ -82,16 +79,24 @@ abstract class IslandoraBatchImporter implements IslandoraBatchImporterInterface
    *
    * Just store the passed in parameters in members.
    *
+   * @param IslandoraTuque $connection
+   *   A Tuque connection, so we can setup objects.
    * @param mixed $file
    *   May be a  bit of a misnomer...  We don't really make any assumptions
    *   about what this holds...  We just pass it along to the item class.
-   * @param array $context
-   *   An array containing the batch context.
+   * @param string $parent_pid
+   *   The PID if the parent to which the ingested objects will belong.
    */
-  public function __construct(&$file, $parent_pid, &$context) {
-    $this->file = &$file;
+  public function __construct(IslandoraTuque $connection, $file, $parent_pid) {
+    $this->file = $file;
     $this->parentPid = $parent_pid;
-    $this->context =& $context;
+
+    $parameters = array(
+      'file' => $file,
+      'parent_pid' => $parent_pid,
+    );
+
+    parent::__construct($connection, $parameters);
   }
 
   /**
@@ -136,74 +141,58 @@ abstract class IslandoraBatchImporter implements IslandoraBatchImporterInterface
   }
 
   /**
-   * Loop import until we have used up 1/3 of the max execution time.
+   * Try to get the namespace from the collection policy.
+   *
+   * @param IslandoraImportObject $item
+   *   So we can get the item's namepace, if we don't get one from a collection
+   *   policy.
+   *
+   * @return string
+   *   The namespace with which the object should be ingested.
    */
-  public function runBatch() {
-    timer_start($this->timerName);
-
-    if (empty($this->context['sandbox'])) {
-      $this->context['sandbox']['progress'] = 0;
-      $this->context['sandbox']['max'] = $this->getNumber();
+  protected function getNamespace($item) {
+    // Get namespace based on collection, then from item.
+    $collection_policies =& drupal_static(__METHOD__, array());
+    $namespace = $item->pidNamespace;
+    if (module_exists('islandora_basic_collection') && !isset($collection_policies[$this->parentPid])) {
+      $parent = islandora_object_load($this->parentPid);
+      if (isset($parent['COLLECTION_POLICY'])) {
+        $policy_stream = $parent['COLLECTION_POLICY'];
+        $collection_policies[$this->parentPid] = new CollectionPolicy($policy_stream->content);
+      }
     }
-    $initial_progress = $this->context['sandbox']['progress'];
+    if (isset($collection_policies[$this->parentPid])) {
+      $info = $collection_policies[$this->parentPid]->getContentModels();
+      $applicable = array_intersect_key($info, drupal_map_assoc($item->getContentModels()));
+      if ($applicable) {
+        $first_applicable = reset($applicable);
+        $namespace = $first_applicable['namespace'];
+      }
+    }
 
+    return $namespace;
+  }
+
+  /**
+   * Inherited.
+   */
+  public function preprocess() {
+    $preprocessed = array();
     $item_class = $this->itemClass;
 
-    $tuque = new IslandoraTuque();
-
-    // Assume we'll have enough time if less than 1/3 of the execution time has
-    // passed. If it's zero, we should have an infinite amount of time (running
-    // the batch from drush?). Also, force us to try at least once, to avoid
-    // getting stuck in the batch loop forever.
-    $max_exec_time = intval(ini_get('max_execution_time')) * 1000;
-    while ((
-        $max_exec_time === 0
-        ||
-        ($max_exec_time > 0 && timer_read($this->timerName) < ($max_exec_time / 3))
-        || (
-          $this->context['sandbox']['progress'] - $initial_progress == 0
-        ))
-      && (
-        $this->context['sandbox']['progress'] < $this->context['sandbox']['max']
-      )) {
-
-      // Extract an item from the source info.
+    $total = $this->getNumber();
+    for ($i = 0; $i < $total; $i++) {
       $item = $item_class::getOne($this->file);
-
-      $result = NULL;
       if ($item) {
-        $pid = $this->getIdentifier($tuque, $item->pidNamespace);
-
-        $results = $item->writeToFedora($pid, $this->parentPid, $this->context['sandbox']);
-
-        $this->context['results'] = array_merge($this->context['results'], $results);
-      }
-      else {
-        // $item::getOne didn't return anything.
-        $this->context['results'][] = array(
-          t('Failed to extract information for import item number %num.'),
-          array(
-            '%num' => $this->context['sandbox']['progress'],
-          ),
-          WATCHDOG_ERROR,
-        );
-      }
-
-      $this->context['sandbox']['progress']++;
-    }
-
-    if ($this->context['sandbox']['max'] > 0) {
-      if ($this->context['sandbox']['progress'] < $this->context['sandbox']['max']) {
-        // Treat as floating point to give feedback.
-        $this->context['finished'] = 1.0 * $this->context['sandbox']['progress'] / $this->context['sandbox']['max'];
-      }
-      else {
-        // Treat as integers to avoid floating point issues (1 -> finished).
-        $this->context['finished'] = $this->context['sandbox']['progress'] / $this->context['sandbox']['max'];
+        $this->parameters['namespace'] = $this->getNamespace($item);
+        $wrapper = $item->getWrapperClass();
+        $preprocessed[] = $object = new $wrapper($this->connection, $item, $this->parameters);
+        $object->addRelationships();
+        $this->addToDatabase($object, $object->getResources());
       }
     }
 
-    timer_stop($this->timerName);
+    return $preprocessed;
   }
 }
 
@@ -363,6 +352,7 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
         'mimetype' => 'text/xml',
         'control_group' => 'M',
         'datastream_file' => file_create_url($file->uri),
+        'file' => $file,
       );
     }
     else {
@@ -382,6 +372,7 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
         'mimetype' => 'text/xml',
         'control_group' => 'X',
         'datastream_file' => file_create_url($file->uri),
+        'file' => $file,
       );
     }
     else {
@@ -391,94 +382,6 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
     }
 
     return $datastreams;
-  }
-
-  /**
-   * Write this item to Fedora.
-   *
-   * @param string $pid
-   *   A PID to we can use to which to write our object.
-   * @param string $parent_pid
-   *   The parent to whom we should relate our object.
-   * @param array $sandbox
-   *   A reference to the batch $context['sandbox'], so we can pass information
-   *   around a little more easily (e.g. for reporting).
-   *
-   * @return array
-   *   An array of arrays, each with up to four values:
-   *   - A string containing a message which will be passed to format_string()
-   *     and in the watchdog.
-   *   - An associative array of placeholders, as used by format_string() and
-   *     watchdog, to use in the message.
-   *   - An integer representing a watchdog error level
-   *   - A string containing a rendered link.
-   */
-  public function writeToFedora($pid, $parent_pid, &$sandbox) {
-    // An array of arrays, containing a structure describing error
-    // conditions.
-    // - A translated string
-    // - An associative array of replacements for the string.
-    // - The error level in the watchdog log.
-    // - A link to the object in which the error occurred.
-    $to_return = array();
-    // An array of Drupal file objects to clean up after ingest.
-    $files = array();
-
-    $label = $this->getTitle();
-    $datastreams = $this->getDatastreams($to_return, $files);
-    $relationships = array();
-
-    $content_models = array_unique((array) $this->contentModel);
-
-    $collection_pid = $parent_pid;
-    $relationships[] = array(
-      'relationship' => 'isMemberOfCollection',
-      'pid' => $parent_pid,
-    );
-
-    module_load_include('inc', 'islandora', 'includes/utilities');
-    $object = islandora_prepare_new_object($pid, $label,
-              $datastreams, $content_models, $relationships, $collection_pid);
-
-    $object = islandora_add_object($object);
-
-    foreach ($files as $file) {
-      if ($file) {
-        file_delete($file);
-      }
-    }
-
-    if (count($to_return) > 0) {
-      foreach ($to_return as &$entry) {
-        $entry[] = array(
-          '@pid' => $pid,
-        );
-        $entry[] = WATCHDOG_DEBUG;
-        $entry[] = l($pid, "islandora/object/$pid");
-      }
-
-      $to_return[] = array(
-        t('Error ingesting "%title" as %pid.'),
-        array(
-          '%pid' => $pid,
-          '%title' => $this->getTitle()),
-        WATCHDOG_ERROR,
-        l($pid, "islandora/object/$pid"),
-      );
-    }
-    else {
-      $to_return[] = array(
-        t('Ingested "%title" as %pid.'),
-        array(
-          '%title' => $this->getTitle(),
-          '%pid' => $pid,
-        ),
-        WATCHDOG_INFO,
-        l($pid, "islandora/object/$pid"),
-      );
-    }
-
-    return $to_return;
   }
 
   /**
@@ -502,7 +405,100 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
     $processor = new XSLTProcessor();
     $processor->importStylesheet($xsl);
 
-    // XXX: Suppressing warnings regarding unregistered prefixes.
     return $processor->transformToXML($input);
+  }
+
+  /**
+   * Accessor for content models.
+   */
+  public function getContentModels() {
+    return (array) $this->contentModel;
+  }
+
+  /**
+   * Expose results of getDatastreams without breaking interface.
+   */
+  final public function getDatastreamInfo() {
+    $errors = array();
+    $files = array();
+    $datastreams = $this->getDatastreams($errors, $files);
+    return array(
+      $datastreams,
+      $errors,
+      $files,
+    );
+  }
+
+  /**
+   * Add relationships to the given object being created.
+   */
+  public function modifyRelationships(AbstractObject $object) {
+    $object->models = $this->getContentModels();
+  }
+
+  /**
+   * Get the name of the class which wraps this.
+   *
+   * Should be a subclass of IslandoraImporterBatchObject.
+   *
+   * @return string
+   *   The name of class.
+   */
+  public function getWrapperClass() {
+    return 'IslandoraImporterBatchObject';
+  }
+}
+
+class IslandoraImporterBatchObject extends IslandoraBatchObject {
+  protected $importerObjectInstance = NULL;
+  protected $preprocessorParameters = array();
+
+  /**
+   * Constructor.
+   */
+  public function __construct(IslandoraTuque $connection, IslandoraImportObject $object, $preprocessor_parameters = array()) {
+    parent::__construct(NULL, $connection->repository);
+    $this->importerObjectInstance = $object;
+    $this->preprocessorParameters = $preprocessor_parameters;
+  }
+
+  /**
+   * Inherited.
+   */
+  public function batchProcess() {
+    $this->label = $this->importerObjectInstance->getTitle();
+    list($datastreams, $errors, $files) = $this->importerObjectInstance->getDatastreamInfo();
+    foreach ($files as $file) {
+      $file->status &= ~FILE_STATUS_PERMANENT;
+      file_save($file);
+      file_usage_add($file, 'islandora_batch', 'islandora_batch_object', $this->getBatchId());
+    }
+    foreach ($datastreams as $ds) {
+      $ds_uri = isset($ds['file']) ?
+        $ds['file']->uri :
+        $ds['datastream_file'];
+
+      $datastream = $this->constructDatastream($ds['dsid'], $ds['control_group']);
+      $datastream->label = $ds['label'];
+      $datastream->mimetype = $ds['mimetype'];
+      $datastream->setContentFromFile($ds_uri);
+      $this->ingestDatastream($datastream);
+    }
+    return ISLANDORA_BATCH_STATE__DONE;
+  }
+
+  /**
+   * Inherited.
+   */
+  public function getResources() {
+    return array();
+  }
+
+  /**
+   * Inherited.
+   */
+  public function addRelationships() {
+    $this->relationships->add(FEDORA_RELS_EXT_URI, 'isMemberOfCollection', $this->preprocessorParameters['parent_pid']);
+    $this->importerObjectInstance->modifyRelationships($this);
   }
 }

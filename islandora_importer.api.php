@@ -11,25 +11,30 @@
  * @return array
  *   An associative array mapping unique machine names to associative arrays
  *   containing the following keys:
- *   - type: The extension of the file.
- *   - module: The module to which the file belongs.
- *   - file: A file to load before attempting to import.
  *   - title: A translated title,
  *   - class: A string containing the class name for your importer.
- *   The first three (type, module and file) correspond to the parameters for
- *   module_load_include.  Title is used as the label, and the class is one
- *   which extends IslandoraBatchImporter (defined in
- *   islandora_importer.inc; just implementing the abstract methods and
- *   using your custom "item class" should suffice)
+ *   Title is used as the label, and the class is one which extends
+ *   IslandoraBatchImporter (defined in islandora_importer.inc; just
+ *   implementing the abstract methods and using your custom "item class" should
+ *   suffice). Please note that the class must be autoloaded.
  */
 function hook_islandora_importer() {
   return array(
     'my_awesome_importer' => array(
-      'type' => 'inc',
-      'module' => 'my_awesome_module',
-      'file' => 'importer',
       'title' => t('My Awesome Importer Module'),
       'class' => 'MAIM',
     ),
   );
+}
+
+/**
+ * Alter hook to hide/update those available for user selection.
+ *
+ * @param array $options
+ *   The array of options resulting from calling hook_islandora_importer().
+ *
+ * @see hook_islandora_importer()
+ */
+function hook_islandora_importer_alter(array &$options) {
+  unset($options['my_replaced_importer']);
 }
