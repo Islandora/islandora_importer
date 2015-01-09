@@ -324,9 +324,12 @@ class ZipBatchImportObject extends IslandoraImportObject {
 
       $zip = new ZipArchive();
       $zip->open(drupal_realpath($this->source['file']->uri));
-      if ($zip->extractTo(drupal_realpath('public://'), $name)) {
-        $file = new stdClass();
-        $file->uri = "public://$name";
+      if ($stream = $zip->getStream($name)) {
+        $file = file_save_data($stream, "public://" . basename($name));
+        fclose($stream);
+        $file->filename = $name;
+        $file->status &= ~FILE_STATUS_PERMANENT;
+        $file = file_save($file);
         $files[] = $file;
 
         $to_return += array(
