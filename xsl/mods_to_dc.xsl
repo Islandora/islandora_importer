@@ -110,7 +110,7 @@
 		</dc:subject>
 	</xsl:template>
 
-	<xsl:template match="mods:subject[mods:topic | mods:name | mods:occupation | mods:geographic | mods:hierarchicalGeographic | mods:cartographics | mods:temporal] ">
+	<xsl:template match="mods:subject[mods:topic | mods:name | mods:occupation | mods:hierarchicalGeographic | mods:cartographics] ">
 		<dc:subject>
 			<xsl:for-each select="mods:topic | mods:occupation">
 				<xsl:value-of select="."/>
@@ -127,12 +127,6 @@
 			</dc:subject>
 		</xsl:for-each>
 
-		<xsl:for-each select="mods:geographic">
-			<dc:coverage>
-				<xsl:value-of select="."/>
-			</dc:coverage>
-		</xsl:for-each>
-
 		<xsl:for-each select="mods:hierarchicalGeographic">
 			<dc:coverage>
 				<xsl:for-each select="mods:continent|mods:country|mods:provence|mods:region|mods:state|mods:territory|mods:county|mods:city|mods:island|mods:area">
@@ -147,7 +141,17 @@
 				<xsl:value-of select="."/>
 			</dc:coverage>
 		</xsl:for-each>
+	</xsl:template>
 
+        <xsl:template match="mods:subject[not(@authority='local')][mods:geographic]">
+		<xsl:for-each select="mods:geographic">
+			<dc:coverage>
+				<xsl:value-of select="."/>
+			</dc:coverage>
+		</xsl:for-each>
+        </xsl:template>
+
+        <xsl:template mathc="mods:subject[not(@authority='local')][mods:temporal]">
 		<xsl:if test="mods:temporal">
 			<dc:coverage>
 				<xsl:for-each select="mods:temporal">
@@ -165,7 +169,7 @@
 				</xsl:for-each>
 			</dc:subject>
 		</xsl:if>
-	</xsl:template>
+        </xsl:template>
 
 	<xsl:template match="mods:abstract | mods:tableOfContents | mods:note">
 		<dc:description>
@@ -222,7 +226,8 @@
 	<xsl:template match="mods:temporal[@point!='start' and @point!='end']  ">
 		<xsl:value-of select="."/>
 	</xsl:template>
-	<xsl:template match="mods:genre">
+
+	<xsl:template match="mods:genre[not(@authority='local')]">
 		<xsl:choose>
 			<xsl:when test="@authority='dct'">
 				<dc:type>
@@ -298,7 +303,7 @@
 				<!-- 2.0: added identifier type attribute to output, if it is present-->
 				<xsl:when test="contains(.,':')">
 					<xsl:value-of select="."/>
-				</xsl:when>
+	                	</xsl:when>
 				<xsl:when test="@type">
 					<xsl:value-of select="$type"/>: <xsl:value-of select="."/>
 				</xsl:when>
