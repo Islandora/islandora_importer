@@ -181,6 +181,7 @@ class ZipBatchImportObject extends IslandoraImportObject {
   protected static $MARC2MODS;
   protected static $DC2MODS;
   protected static $DWC2DC;
+  protected static $MADS2DC;
 
   /**
    * An AbstractObject for use in calling hooks... Should *NOT* be ingested.
