@@ -181,6 +181,7 @@ class ZipBatchImportObject extends IslandoraImportObject {
   protected static $MARC2MODS;
   protected static $DC2MODS;
   protected static $DWC2DC;
+  protected static $MADS2DC;
 
   /**
    * An AbstractObject for use in calling hooks... Should *NOT* be ingested.
@@ -200,6 +201,7 @@ class ZipBatchImportObject extends IslandoraImportObject {
     self::$MARC2MODS = "$transform_path/MARC21slim2MODS3-4.xsl";
     self::$DC2MODS = "$transform_path/simpleDC2MODS.xsl";
     self::$DWC2DC = "$transform_path/dwc_to_dc.xsl";
+    self::$MADS2DC = "$transform_path/mads_to_dc.xsl";
 
     $this->skeleton = islandora_get_tuque_connection()->repository->constructObject('temp:pid');
     $this->skeleton->models = $this->contentModel;
@@ -297,6 +299,14 @@ class ZipBatchImportObject extends IslandoraImportObject {
           $dsid = 'DWC';
           $mimetype = 'text/xml';
         }
+
+        elseif ($this->isMADS($this->getXML())) {
+          // For MADS file, datastream to MADS and skips the detection.
+          $do_determine_dsid_and_mimetype = FALSE;
+          $dsid = 'MADS';
+          $mimetype = 'text/xml';
+        }
+
         else {
           // XML streams are handled via the parent implementation,
           // (via get_{mods,dc}()) so let's go to the next item.
@@ -380,6 +390,9 @@ class ZipBatchImportObject extends IslandoraImportObject {
       elseif ($this->isDWC($xml)) {
         $this->mods = static::runXSLTransform(array('input' => $this->getDC(), 'xsl' => self::$DC2MODS));
       }
+      elseif ($this->isMADS($xml)) {
+        $this->mods = static::runXSLTransform(array('input' => $this->getDC(), 'xsl' => self::$DC2MODS));
+      }
       if (empty($this->mods)) {
         // If we do not yet have any XML, create a dumb MODS with just the
         // title, and set it.
@@ -413,6 +426,9 @@ EOXML;
       elseif ($this->isDWC($xml)) {
         $this->dc = static::runXSLTransform(array('input' => $xml, 'xsl' => self::$DWC2DC));
       }
+      elseif ($this->isMADS($xml)) {
+        $this->dc = static::runXSLTransform(array('input' => $xml, 'xsl' => self::$MADS2DC));
+      }
       // Otherwise, call the parent implementation (transform from MODS).
       if (empty($this->dc)) {
         parent::getDC();
@@ -441,6 +457,9 @@ EOXML;
       if ($this->isDWC($datastream)) {
         $dsid = 'DWC';
       }
+      elseif ($this->isMADS($datastream)) {
+        $dsid = 'MADS';
+      }
     }
     else {
       return "$dsid datastream";
@@ -463,6 +482,12 @@ EOXML;
         // If it was generated some other way we ignore it.
         $has_filename = $this->isDWC($xml);
         return $use_filename && $has_filename ? $xml_filename : 'Darwin Core Record';
+
+      case "MADS":
+        // Check if a file was associated with MADS.
+        // If it was generated some other way we ignore it.
+        $has_filename = $this->isMADS($xml);
+        return $use_filename && $has_filename ? $xml_filename : 'MADS Record';
 
       default:
         if ($use_filename && isset($datastream['filename'])) {
@@ -519,6 +544,14 @@ EOXML;
   protected function isDWC($xml) {
     $rootdoc = $this->getLocalNameOfRootElement($xml);
     return (($rootdoc == 'DarwinRecordSet') || ($rootdoc == 'SimpleDarwinRecordSet') || ($rootdoc == 'SimpleDarwinRecord'));
+  }
+
+  /**
+   * Checks if the given file content is actually a MADS document.
+   */
+  protected function isMADS($xml) {
+    $rootdoc = $this->getLocalNameOfRootElement($xml);
+    return $rootdoc == 'mads';
   }
 
   /**
