@@ -1,5 +1,4 @@
-
-# Islandora Zip Importer [![Build Status](https://travis-ci.org/Islandora/islandora_importer.png?branch=7.x)](https://travis-ci.org/Islandora/islandora_importer)
+# Islandora Zip Importer
 
 ## Introduction 
 
@@ -8,9 +7,9 @@ Imports Zip Files.
 ## Requirements
 
 This module requires the following modules/libraries:
-* [Islandora Importer](https://github.com/Islandora/islandora_importer)
-* [Islandora Basic Collection](https://github.com/Islandora/islandora_solution_pack_collection Zip file)
 
+* [Islandora Importer](https://github.com/Islandora/islandora_importer)
+* [Islandora Basic Collection](https://github.com/Islandora/islandora_solution_pack_collection)
 
 ## Installation
 
@@ -42,4 +41,3 @@ If you would like to contribute to this module, please check out our helpful [Do
 ## License
 
 [GPLv3](http://www.gnu.org/licenses/gpl-3.0.txt)
-

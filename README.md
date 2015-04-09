@@ -10,7 +10,7 @@ This module requires the following modules/libraries:
 
 * [Islandora](https://github.com/islandora/islandora)
 * [Tuque](https://github.com/islandora/tuque)
-* [Islandora Basic Collection](https://github.com/Islandora/islandora_solution_pack_collection Zip file)
+* [Islandora Basic Collection](https://github.com/Islandora/islandora_solution_pack_collection)
 
 ## Installation
 
