@@ -267,7 +267,7 @@ class ZipBatchImportObject extends IslandoraImportObject {
     }
 
     // Fire off to the derivative hook to get the primary DSID's.
-    $hook_output = islandora_invoke_hook_list(ISLANDORA_DERVIATIVE_CREATION_HOOK, $models, array($this->skeleton));
+    $hook_output = islandora_invoke_hook_list(ISLANDORA_DERIVATIVE_CREATION_HOOK, $models, array($this->skeleton));
     $source_dsid = FALSE;
     foreach ($dsid as $arr_key => $key_val) {
       foreach ($hook_output as $hook_key => $hook_value) {
