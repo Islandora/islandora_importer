@@ -277,6 +277,17 @@ class ZipBatchImportObject extends IslandoraImportObject {
         }
       }
     }
+
+    // Didn't match a primary datastream fallback for supplemental by matching
+    // the first available.
+    if (!$source_dsid) {
+      foreach ($dsids as $datastream => $ds_info) {
+        if (in_array($mimetype, $ds_info['mime'])) {
+          $source_dsid = $ds_info['id'];
+          break;
+        }
+      }
+    }
     return array($source_dsid, $mimetype);
   }
 
