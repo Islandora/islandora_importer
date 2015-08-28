@@ -189,16 +189,16 @@ class ZipBatchImportObject extends IslandoraImportObject {
 	
     if(self::$transform_path==''){
 
-	self::$transform_path = drupal_get_path('module', 'zip_importer') . '/xsl';
+      self::$transform_path = drupal_get_path('module', 'zip_importer') . '/xsl';
  	
-	if(self::$MARC2MODS=='') self::$MARC2MODS = self::$transform_path."/MARC21slim2MODS3-4.xsl";
+      if(self::$MARC2MODS=='') self::$MARC2MODS = self::$transform_path."/MARC21slim2MODS3-4.xsl";
 
-	if(self::$DC2MODS=='') self::$DC2MODS = self::$transform_path."/simpleDC2MODS.xsl";
+      if(self::$DC2MODS=='') self::$DC2MODS = self::$transform_path."/simpleDC2MODS.xsl";
 
-	if(self::$DWC2DC=='') self::$DWC2DC = self::$transform_path."/dwc_to_dc.xsl";
+      if(self::$DWC2DC=='') self::$DWC2DC = self::$transform_path."/dwc_to_dc.xsl";
 
-	if(self::$MADS2DC=='') self::$MADS2DC = self::$transform_path."/mads_to_dc.xsl";
-     }
+      if(self::$MADS2DC=='') self::$MADS2DC = self::$transform_path."/mads_to_dc.xsl";
+    }
 
   }
 
@@ -411,7 +411,6 @@ class ZipBatchImportObject extends IslandoraImportObject {
         // wrappers that come out of the XSL output before setting the contents.
         // As documented, Islandora does not support multiple records within
         // a single MARC collection wrapper.
-
 	$transformed_marc = static::runXSLTransform(array('input' => $xml, 'xsl' => self::$MARC2MODS));
 	
         $this->mods = $this->cleanupMARC($transformed_marc);
@@ -449,7 +448,7 @@ EOXML;
   */
   public function __wakeup(){
 
-	self::initialize_paths();
+    self::initialize_paths();
 
   }
   /**
