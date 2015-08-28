@@ -178,10 +178,30 @@ class ZipBatchImporter extends IslandoraBatchImporter {
 class ZipBatchImportObject extends IslandoraImportObject {
 
   protected $mods;
-  protected static $MARC2MODS;
-  protected static $DC2MODS;
-  protected static $DWC2DC;
-  protected static $MADS2DC;
+  protected static $MARC2MODS ='';
+  protected static $DC2MODS = '';
+  protected static $DWC2DC = '';
+  protected static $MADS2DC = '';
+
+  protected static $transform_path = '';
+
+  public static function initialize_paths(){
+	
+    if(self::$transform_path==''){
+
+	self::$transform_path = drupal_get_path('module', 'zip_importer') . '/xsl';
+	watchdog("islandora_importer","PATH IN INITIALIZE ".self::$transform_path);
+
+	if(self::$MARC2MODS=='') self::$MARC2MODS = self::$transform_path."/MARC21slim2MODS3-4.xsl";
+
+	if(self::$DC2MODS=='') self::$DC2MODS = self::$transform_path."/simpleDC2MODS.xsl";
+
+	if(self::$DWC2DC=='') self::$DWC2DC = self::$transform_path."/dwc_to_dc.xsl";
+
+	if(self::$MADS2DC=='') self::$MADS2DC = self::$transform_path."/mads_to_dc.xsl";
+     }
+
+  }
 
   /**
    * An AbstractObject for use in calling hooks... Should *NOT* be ingested.
@@ -197,14 +217,9 @@ class ZipBatchImportObject extends IslandoraImportObject {
     parent::__construct($source);
     $this->pidNamespace = $this->source['pid_namespace'];
     $this->contentModel = (array) $this->source['content_model'];
-    $transform_path = drupal_get_path('module', 'zip_importer') . '/xsl';
-    self::$MARC2MODS = "$transform_path/MARC21slim2MODS3-4.xsl";
-    self::$DC2MODS = "$transform_path/simpleDC2MODS.xsl";
-    self::$DWC2DC = "$transform_path/dwc_to_dc.xsl";
-    self::$MADS2DC = "$transform_path/mads_to_dc.xsl";
 
-    $this->skeleton = islandora_get_tuque_connection()->repository->constructObject('temp:pid');
-    $this->skeleton->models = $this->contentModel;
+    self::initialize_paths();
+       
   }
 
   /**
@@ -213,6 +228,7 @@ class ZipBatchImportObject extends IslandoraImportObject {
    * @see IslandoraImportObjectInterface::getOne()
    */
   public static function getOne(&$info) {
+  
     $record = array(
       'pid_namespace' => $info['pid_namespace'],
       'file' => $info['file'],
@@ -392,7 +408,15 @@ class ZipBatchImportObject extends IslandoraImportObject {
         // wrappers that come out of the XSL output before setting the contents.
         // As documented, Islandora does not support multiple records within
         // a single MARC collection wrapper.
-        $transformed_marc = static::runXSLTransform(array('input' => $xml, 'xsl' => self::$MARC2MODS));
+        // $transformed_marc = static::runXSLTransform(array('input' => $xml, 'xsl' => self::$MARC2MODS));
+        //if(self::$MARC2MODS==''){ 
+
+	//	watchdog('islandora_importer', "reinitializing paths because of XSL VALUE => ".self::$MARC2MODS );		
+	//	self::initialize_paths();
+
+	// }
+	$transformed_marc = static::runXSLTransform(array('input' => $xml, 'xsl' => self::$MARC2MODS));
+	
         $this->mods = $this->cleanupMARC($transformed_marc);
       }
       elseif ($this->isDC($xml)) {
@@ -420,6 +444,11 @@ EOXML;
     return $this->mods;
   }
 
+  public function __wakeup(){
+
+	self::initialize_paths();
+
+  }
   /**
    * Generate DC to describe the imported data.
    *
