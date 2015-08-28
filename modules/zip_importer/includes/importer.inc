@@ -218,6 +218,10 @@ class ZipBatchImportObject extends IslandoraImportObject {
     $this->contentModel = (array) $this->source['content_model'];
 
     self::initialize_paths();
+
+    $this->skeleton = islandora_get_tuque_connection()->repository->constructObject('temp:pid');
+
+    $this->skeleton->models = $this->contentModel;
        
   }
 
