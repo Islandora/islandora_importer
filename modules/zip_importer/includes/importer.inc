@@ -190,8 +190,7 @@ class ZipBatchImportObject extends IslandoraImportObject {
     if(self::$transform_path==''){
 
 	self::$transform_path = drupal_get_path('module', 'zip_importer') . '/xsl';
-	watchdog("islandora_importer","PATH IN INITIALIZE ".self::$transform_path);
-
+ 	
 	if(self::$MARC2MODS=='') self::$MARC2MODS = self::$transform_path."/MARC21slim2MODS3-4.xsl";
 
 	if(self::$DC2MODS=='') self::$DC2MODS = self::$transform_path."/simpleDC2MODS.xsl";
@@ -408,13 +407,7 @@ class ZipBatchImportObject extends IslandoraImportObject {
         // wrappers that come out of the XSL output before setting the contents.
         // As documented, Islandora does not support multiple records within
         // a single MARC collection wrapper.
-        // $transformed_marc = static::runXSLTransform(array('input' => $xml, 'xsl' => self::$MARC2MODS));
-        //if(self::$MARC2MODS==''){ 
 
-	//	watchdog('islandora_importer', "reinitializing paths because of XSL VALUE => ".self::$MARC2MODS );		
-	//	self::initialize_paths();
-
-	// }
 	$transformed_marc = static::runXSLTransform(array('input' => $xml, 'xsl' => self::$MARC2MODS));
 	
         $this->mods = $this->cleanupMARC($transformed_marc);
@@ -444,6 +437,12 @@ EOXML;
     return $this->mods;
   }
 
+  /**
+  *  This function is the php magic function to reconstruct the file paths of xsl which were stored in the 
+  *  static variables. This simply calls initialize_paths method once more to initialize the paths.
+  *  
+  *  This method will be called when we unserialize this object after fetching it from the database.
+  */
   public function __wakeup(){
 
 	self::initialize_paths();
