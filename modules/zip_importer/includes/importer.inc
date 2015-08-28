@@ -184,19 +184,32 @@ class ZipBatchImportObject extends IslandoraImportObject {
   protected static $MADS2DC = '';
   protected static $transformPath = '';
 
+  /**
+   *  Function to initialize the static paths for various xsl
+   *  
+   */
+
   public static function initialize_paths(){
 	
-    if(self::$transform_path==''){
+    if (self::$transform_path == '') {
 
       self::$transformPath = drupal_get_path('module', 'zip_importer') . '/xsl';
  	
-      if (self::$MARC2MODS == '') self::$MARC2MODS = self::$transformPath . "/MARC21slim2MODS3-4.xsl";
+      if (self::$MARC2MODS == '' ) {
+        self::$MARC2MODS = self::$transformPath . "/MARC21slim2MODS3-4.xsl"; 
+      }
 
-      if (self::$DC2MODS == '') self::$DC2MODS = self::$transformPath . "/simpleDC2MODS.xsl";
+      if (self::$DC2MODS == '') {
+        self::$DC2MODS = self::$transformPath . "/simpleDC2MODS.xsl";
+      }
 
-      if (self::$DWC2DC == '') self::$DWC2DC = self::$transformPath . "/dwc_to_dc.xsl";
+      if (self::$DWC2DC == '') {
+        self::$DWC2DC = self::$transformPath . "/dwc_to_dc.xsl";
+      }
 
-      if (self::$MADS2DC == '') self::$MADS2DC = self::$transformPath . "/mads_to_dc.xsl";
+      if (self::$MADS2DC == '') {
+        self::$MADS2DC = self::$transformPath . "/mads_to_dc.xsl";
+      }
     }
 
   }
