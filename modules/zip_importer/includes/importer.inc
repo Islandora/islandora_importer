@@ -236,7 +236,6 @@ class ZipBatchImportObject extends IslandoraImportObject {
    * @see IslandoraImportObjectInterface::getOne()
    */
   public static function getOne(&$info) {
-  
     $record = array(
       'pid_namespace' => $info['pid_namespace'],
       'file' => $info['file'],
