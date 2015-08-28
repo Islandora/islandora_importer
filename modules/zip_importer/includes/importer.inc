@@ -189,7 +189,7 @@ class ZipBatchImportObject extends IslandoraImportObject {
    */
   public static function initializePaths() {
 
-    if (self::$transform_path == '') {
+    if (self::$transformPath == '') {
 
       self::$transformPath = drupal_get_path('module', 'zip_importer') . '/xsl';
 
