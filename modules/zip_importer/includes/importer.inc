@@ -423,7 +423,7 @@ class ZipBatchImportObject extends IslandoraImportObject {
         // wrappers that come out of the XSL output before setting the contents.
         // As documented, Islandora does not support multiple records within
         // a single MARC collection wrapper.
-	$transformed_marc = static::runXSLTransform(array('input' => $xml, 'xsl' => self::$MARC2MODS));
+        $transformed_marc = static::runXSLTransform(array('input' => $xml, 'xsl' => self::$MARC2MODS));
 	
         $this->mods = $this->cleanupMARC($transformed_marc);
       }
@@ -453,8 +453,7 @@ EOXML;
   }
 
   /**
-   *   Implements the PHP magic method __wakeup 
-   *
+   * Implements the PHP magic method __wakeup 
    */
   public function __wakeup() {
 
