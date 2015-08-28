@@ -185,9 +185,9 @@ class ZipBatchImportObject extends IslandoraImportObject {
   protected static $transformPath = '';
 
   /**
-   *  Function to initialize the static paths for various xsl 
+   * Function to initialize the static paths for various xsl 
    */
-  public static function initialize_paths() {
+  public static function initializePaths() {
 
     if (self::$transform_path == '') {
 
@@ -225,7 +225,7 @@ class ZipBatchImportObject extends IslandoraImportObject {
     parent::__construct($source);
     $this->pidNamespace = $this->source['pid_namespace'];
     $this->contentModel = (array) $this->source['content_model'];
-    self::initialize_paths();
+    self::initializePaths();
     $this->skeleton = islandora_get_tuque_connection()->repository->constructObject('temp:pid');
     $this->skeleton->models = $this->contentModel;
   }
@@ -448,7 +448,7 @@ EOXML;
    * Implements the PHP magic method __wakeup.
    */
   public function __wakeup() {
-    static::initialize_paths();
+    static::initializePaths();
   }
 
   /**
