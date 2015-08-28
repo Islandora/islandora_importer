@@ -187,14 +187,14 @@ class ZipBatchImportObject extends IslandoraImportObject {
   /**
    *  Function to initialize the static paths for various xsl 
    */
-  public static function initialize_paths(){
+  public static function initialize_paths() {
 
     if (self::$transform_path == '') {
 
       self::$transformPath = drupal_get_path('module', 'zip_importer') . '/xsl';
 
-      if (self::$MARC2MODS == '' ) {
-        self::$MARC2MODS = self::$transformPath . "/MARC21slim2MODS3-4.xsl"; 
+      if (self::$MARC2MODS == '') {
+        self::$MARC2MODS = self::$transformPath . "/MARC21slim2MODS3-4.xsl";
       }
 
       if (self::$DC2MODS == '') {
@@ -225,13 +225,9 @@ class ZipBatchImportObject extends IslandoraImportObject {
     parent::__construct($source);
     $this->pidNamespace = $this->source['pid_namespace'];
     $this->contentModel = (array) $this->source['content_model'];
-
     self::initialize_paths();
-
     $this->skeleton = islandora_get_tuque_connection()->repository->constructObject('temp:pid');
-
     $this->skeleton->models = $this->contentModel;
-       
   }
 
   /**
@@ -421,7 +417,6 @@ class ZipBatchImportObject extends IslandoraImportObject {
         // As documented, Islandora does not support multiple records within
         // a single MARC collection wrapper.
         $transformed_marc = static::runXSLTransform(array('input' => $xml, 'xsl' => self::$MARC2MODS));
-	
         $this->mods = $this->cleanupMARC($transformed_marc);
       }
       elseif ($this->isDC($xml)) {
@@ -450,7 +445,7 @@ EOXML;
   }
 
   /**
-   * Implements the PHP magic method __wakeup 
+   * Implements the PHP magic method __wakeup.
    */
   public function __wakeup() {
 
