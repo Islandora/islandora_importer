@@ -185,7 +185,7 @@ class ZipBatchImportObject extends IslandoraImportObject {
   protected static $transformPath = '';
 
   /**
-   * Function to initialize the static paths for various xsl 
+   * Function to initialize the static paths for various xsl.
    */
   public static function initializePaths() {
 
