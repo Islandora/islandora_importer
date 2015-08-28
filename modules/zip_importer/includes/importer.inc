@@ -178,26 +178,25 @@ class ZipBatchImporter extends IslandoraBatchImporter {
 class ZipBatchImportObject extends IslandoraImportObject {
 
   protected $mods;
-  protected static $MARC2MODS ='';
+  protected static $MARC2MODS = '';
   protected static $DC2MODS = '';
   protected static $DWC2DC = '';
   protected static $MADS2DC = '';
-
-  protected static $transform_path = '';
+  protected static $transformPath = '';
 
   public static function initialize_paths(){
 	
     if(self::$transform_path==''){
 
-      self::$transform_path = drupal_get_path('module', 'zip_importer') . '/xsl';
+      self::$transformPath = drupal_get_path('module', 'zip_importer') . '/xsl';
  	
-      if(self::$MARC2MODS=='') self::$MARC2MODS = self::$transform_path."/MARC21slim2MODS3-4.xsl";
+      if (self::$MARC2MODS == '') self::$MARC2MODS = self::$transformPath . "/MARC21slim2MODS3-4.xsl";
 
-      if(self::$DC2MODS=='') self::$DC2MODS = self::$transform_path."/simpleDC2MODS.xsl";
+      if (self::$DC2MODS == '') self::$DC2MODS = self::$transformPath . "/simpleDC2MODS.xsl";
 
-      if(self::$DWC2DC=='') self::$DWC2DC = self::$transform_path."/dwc_to_dc.xsl";
+      if (self::$DWC2DC == '') self::$DWC2DC = self::$transformPath . "/dwc_to_dc.xsl";
 
-      if(self::$MADS2DC=='') self::$MADS2DC = self::$transform_path."/mads_to_dc.xsl";
+      if (self::$MADS2DC == '') self::$MADS2DC = self::$transformPath . "/mads_to_dc.xsl";
     }
 
   }
@@ -441,16 +440,17 @@ EOXML;
   }
 
   /**
-  *  This function is the php magic function to reconstruct the file paths of xsl which were stored in the 
-  *  static variables. This simply calls initialize_paths method once more to initialize the paths.
-  *  
-  *  This method will be called when we unserialize this object after fetching it from the database.
-  */
-  public function __wakeup(){
+   *  This function is the php magic function to reconstruct the file paths of xsl which were stored in the 
+   *  static variables. This simply calls initialize_paths method once more to initialize the paths.
+   *  
+   *  This method will be called when we unserialize this object after fetching it from the database.
+   */
+  public function __wakeup() {
 
     self::initialize_paths();
 
   }
+
   /**
    * Generate DC to describe the imported data.
    *
