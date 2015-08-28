@@ -440,10 +440,8 @@ EOXML;
   }
 
   /**
-   *  This function is the php magic function to reconstruct the file paths of xsl which were stored in the 
-   *  static variables. This simply calls initialize_paths method once more to initialize the paths.
-   *  
-   *  This method will be called when we unserialize this object after fetching it from the database.
+   *   Implements the PHP magic method __wakeup 
+   *
    */
   public function __wakeup() {
 
