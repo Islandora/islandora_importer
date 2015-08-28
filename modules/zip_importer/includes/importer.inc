@@ -448,9 +448,7 @@ EOXML;
    * Implements the PHP magic method __wakeup.
    */
   public function __wakeup() {
-
-    self::initialize_paths();
-
+    static::initialize_paths();
   }
 
   /**
