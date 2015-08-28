@@ -185,16 +185,14 @@ class ZipBatchImportObject extends IslandoraImportObject {
   protected static $transformPath = '';
 
   /**
-   *  Function to initialize the static paths for various xsl
-   *  
+   *  Function to initialize the static paths for various xsl 
    */
-
   public static function initialize_paths(){
-	
+
     if (self::$transform_path == '') {
 
       self::$transformPath = drupal_get_path('module', 'zip_importer') . '/xsl';
- 	
+
       if (self::$MARC2MODS == '' ) {
         self::$MARC2MODS = self::$transformPath . "/MARC21slim2MODS3-4.xsl"; 
       }
@@ -211,7 +209,6 @@ class ZipBatchImportObject extends IslandoraImportObject {
         self::$MADS2DC = self::$transformPath . "/mads_to_dc.xsl";
       }
     }
-
   }
 
   /**
