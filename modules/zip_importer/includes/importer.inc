@@ -178,10 +178,38 @@ class ZipBatchImporter extends IslandoraBatchImporter {
 class ZipBatchImportObject extends IslandoraImportObject {
 
   protected $mods;
-  protected static $MARC2MODS;
-  protected static $DC2MODS;
-  protected static $DWC2DC;
-  protected static $MADS2DC;
+  protected static $MARC2MODS = '';
+  protected static $DC2MODS = '';
+  protected static $DWC2DC = '';
+  protected static $MADS2DC = '';
+  protected static $transformPath = '';
+
+  /**
+   * Function to initialize the static paths for various xsl.
+   */
+  public static function initializePaths() {
+
+    if (self::$transformPath == '') {
+
+      self::$transformPath = drupal_get_path('module', 'zip_importer') . '/xsl';
+
+      if (self::$MARC2MODS == '') {
+        self::$MARC2MODS = self::$transformPath . "/MARC21slim2MODS3-4.xsl";
+      }
+
+      if (self::$DC2MODS == '') {
+        self::$DC2MODS = self::$transformPath . "/simpleDC2MODS.xsl";
+      }
+
+      if (self::$DWC2DC == '') {
+        self::$DWC2DC = self::$transformPath . "/dwc_to_dc.xsl";
+      }
+
+      if (self::$MADS2DC == '') {
+        self::$MADS2DC = self::$transformPath . "/mads_to_dc.xsl";
+      }
+    }
+  }
 
   /**
    * An AbstractObject for use in calling hooks... Should *NOT* be ingested.
@@ -197,12 +225,7 @@ class ZipBatchImportObject extends IslandoraImportObject {
     parent::__construct($source);
     $this->pidNamespace = $this->source['pid_namespace'];
     $this->contentModel = (array) $this->source['content_model'];
-    $transform_path = drupal_get_path('module', 'zip_importer') . '/xsl';
-    self::$MARC2MODS = "$transform_path/MARC21slim2MODS3-4.xsl";
-    self::$DC2MODS = "$transform_path/simpleDC2MODS.xsl";
-    self::$DWC2DC = "$transform_path/dwc_to_dc.xsl";
-    self::$MADS2DC = "$transform_path/mads_to_dc.xsl";
-
+    self::initializePaths();
     $this->skeleton = islandora_get_tuque_connection()->repository->constructObject('temp:pid');
     $this->skeleton->models = $this->contentModel;
   }
@@ -418,6 +441,13 @@ EOXML;
       }
     }
     return $this->mods;
+  }
+
+  /**
+   * Implements the PHP magic method __wakeup.
+   */
+  public function __wakeup() {
+    static::initializePaths();
   }
 
   /**
