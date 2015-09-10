@@ -33,6 +33,12 @@ Having problems or solved a problem? Check out the Islandora google groups for a
 * [Islandora Group](https://groups.google.com/forum/?hl=en&fromgroups#!forum/islandora)
 * [Islandora Dev Group](https://groups.google.com/forum/?hl=en&fromgroups#!forum/islandora-dev)
 
+## FAQ
+
+Q. How does Importer interact with XACML POLICY datstreams?
+
+A. It doesn't. A POLICY datastream will not be applied to objects ingested via Zip File Importer on ingest, even if the policy of the parent collection is set to apply to all new objects ingested into the collection. You can retroactively apply a policy to objects imported via Zip File Importer by updating the policy on the parent collection and telling it to apply to "all children of this collection."
+
 ## Maintainers/Sponsors
 
 Current maintainers:
