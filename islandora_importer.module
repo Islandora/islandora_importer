@@ -162,7 +162,7 @@ function islandora_importer_form_submit(array $form, array &$form_state) {
         $form_state['storage']['parent_pid']
       );
 
-      islandora_batch_ingest(array(
+      islandora_batch_set_operations(array(
         'preprocessor' => $preprocessor,
       ));
     }
