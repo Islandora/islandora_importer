@@ -162,9 +162,22 @@ function islandora_importer_form_submit(array $form, array &$form_state) {
         $form_state['storage']['parent_pid']
       );
 
-      islandora_batch_set_operations(array(
-        'preprocessor' => $preprocessor,
-      ));
+      if ($preprocessor->ingestImmediately()) {
+        // Ingest should be started by normal form submission process.
+        islandora_batch_set_operations(array(
+          'preprocessor' => $preprocessor,
+        ));
+      }
+      else {
+        // Just preprocess the set.
+        islandora_batch_handle_preprocessor($preprocessor);
+        module_load_include('inc', 'islandora_batch', 'includes/db');
+        drupal_set_message(t('<a href="@url">Set @id</a> was preprocessed, containing @count objects.', array(
+          '@url' => url('islandora_batch/reports/queue/' . $preprocessor->getSetId()),
+          '@id' => $preprocessor->getSetId(),
+          '@count' => islandora_batch_get_count_of_queued_set_objects($preprocessor->getSetId()),
+        )));
+      }
     }
   }
   else {
