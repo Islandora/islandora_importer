@@ -131,8 +131,9 @@ abstract class IslandoraBatchImporter extends IslandoraBatchPreprocessor impleme
     if (empty($this->context['results']['pid_cache'])) {
       // Get enough PIDs for half of the remaining items.
       // (plus one, so we'll always get at least one).
-      $this->context['results']['pid_cache'] = (array) $tuque->api->m->getNextPid(
+      $this->context['results']['pid_cache'] = (array) $tuque->repository->getNextIdentifier(
         $namespace,
+        NULL,
         intval((($this->context['sandbox']['max'] - $this->context['sandbox']['progress']) / 2) + 1)
       );
     }
