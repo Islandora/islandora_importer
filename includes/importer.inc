@@ -362,7 +362,7 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
       $datastreams[] = array(
         'dsid' => 'MODS',
         'label' => 'MODS Record',
-        'mimetype' => 'text/xml',
+        'mimetype' => 'application/xml',
         'control_group' => 'M',
         'datastream_file' => file_create_url($file->uri),
         'file' => $file,
@@ -382,7 +382,7 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
       $datastreams[] = array(
         'dsid' => 'DC',
         'label' => 'DC Record',
-        'mimetype' => 'text/xml',
+        'mimetype' => 'application/xml',
         'control_group' => 'X',
         'datastream_file' => file_create_url($file->uri),
         'file' => $file,
