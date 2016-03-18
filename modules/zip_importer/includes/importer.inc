@@ -277,7 +277,7 @@ class ZipBatchImportObject extends IslandoraImportObject {
     }
 
     $mimetype = $mime_detect->getMimetype($name);
-    $dsid = FALSE;
+    $dsid = array();
     // Determine which stream this should be, Gather together all
     // non optional datastream ids.
     foreach ($dsids as $ds => $info) {
