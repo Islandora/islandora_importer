@@ -494,13 +494,6 @@ EOXML;
     if (isset($this->source['object_info']['xml'])) {
       $xml_filename = $this->source['object_info']['xml'];
       $xml = $this->getXML();
-
-      if ($this->isDWC($datastream)) {
-        $dsid = 'DWC';
-      }
-      elseif ($this->isMADS($datastream)) {
-        $dsid = 'MADS';
-      }
     }
     else {
       return "$dsid datastream";
