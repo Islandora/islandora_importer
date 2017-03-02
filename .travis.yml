@@ -25,6 +25,9 @@ before_install:
   - ln -s $TRAVIS_BUILD_DIR sites/all/modules/islandora_importer
   - ln -s $HOME/islandora_batch sites/all/modules/islandora_batch
   - drush en --yes islandora_importer
+before_script:
+  # Mysql might time out for long tests, increase the wait timeout.
+  - mysql -e 'SET @@GLOBAL.wait_timeout=1200'
 script:
   - ant -buildfile sites/all/modules/islandora_importer/build.xml lint
   - $ISLANDORA_DIR/tests/scripts/line_endings.sh sites/all/modules/islandora_importer
