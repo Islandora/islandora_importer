@@ -500,5 +500,12 @@ class IslandoraImporterBatchObject extends IslandoraBatchObject {
   public function addRelationships() {
     $this->relationships->add(FEDORA_RELS_EXT_URI, 'isMemberOfCollection', $this->preprocessorParameters['parent_pid']);
     $this->importerObjectInstance->modifyRelationships($this);
+
+    if (module_exists('islandora_xacml_editor')) {
+      $parent = islandora_object_load($this->preprocessorParameters['parent_pid']);
+      if ($parent) {
+        islandora_xacml_editor_apply_parent_policy($this, $parent);
+      }
+    }
   }
 }
