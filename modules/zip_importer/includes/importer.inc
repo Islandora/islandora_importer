@@ -430,9 +430,9 @@ class ZipBatchImportObject extends IslandoraImportObject {
       if (empty($this->mods)) {
         // If we do not yet have any XML, create a dumb MODS with just the
         // title, and set it.
-        $title = pathinfo(reset($this->source['object_info']), PATHINFO_FILENAME);
+        $title = htmlspecialchars(pathinfo(reset($this->source['object_info']), PATHINFO_FILENAME));
         $this->mods = <<<EOXML
-<mods xmlns:mods="http://www.loc.gov/mods/v3" xmlns="http://www.loc.gov/mods/v3">
+<mods xmlns="http://www.loc.gov/mods/v3">
   <titleInfo>
     <title>$title</title>
   </titleInfo>
