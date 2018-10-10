@@ -11,6 +11,7 @@ This module requires the following modules/libraries:
 * [Islandora](https://github.com/islandora/islandora)
 * [Tuque](https://github.com/islandora/tuque)
 * [Islandora Basic Collection](https://github.com/Islandora/islandora_solution_pack_collection)
+* [Islandora Batch](https://github.com/islandora/islandora_batch)
 
 ## Installation
 
@@ -44,6 +45,7 @@ A. It doesn't. A POLICY datastream will not be applied to objects ingested via Z
 Current maintainers:
 
 * [Adam Vessey](https://github.com/adam-vessey)
+* [Diego Pino](https://github.com/DiegoPino)
 
 ## Development
 
