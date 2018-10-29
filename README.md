@@ -19,7 +19,7 @@ Install as usual, see [this](https://drupal.org/documentation/install/modules-th
 
 ## Configuration
 
-Select whether or not to 'Use filename as Datastream label' in Administration » Islandora » Zip Importer (admin/islandora/zipimporter).
+Select whether or not to 'Use filename as Datastream label' in Administration » Islandora » Islandora Utility Modules >> Zip Importer (admin/islandora/tools/zipimporter).
 
 ![Configuration](https://camo.githubusercontent.com/96bdf5509afc3522ab1302b94a70606a013d79e8/687474703a2f2f692e696d6775722e636f6d2f7a613148706d712e706e67)
 
