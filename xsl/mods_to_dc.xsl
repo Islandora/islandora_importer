@@ -52,6 +52,7 @@
 	When the first subelement in a subject wrapper is topic, subject subelements are strung together in dc:subject with hyphens separating them
 	Some subject subelements, i.e., geographic, temporal, hierarchicalGeographic, and cartographics, are also parsed into dc:coverage
 	The subject subelement geographicCode is dropped in the transform
+
 -->
 
 	<xsl:output method="xml" indent="yes"/>
@@ -299,7 +300,7 @@
 				<xsl:variable name="unit" select="translate(@unit,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')"/>
 				<!-- ws 1.7 -->
 				<xsl:if test="@unit">
-					<xsl:value-of select="$unit"/>: 
+					<xsl:value-of select="$unit"/>: 
 				</xsl:if>
 				<xsl:value-of select="."/>
 			</dc:format>
@@ -324,10 +325,10 @@
 				<xsl:when test="@type">
 					<xsl:choose>
 						<xsl:when test="@type">
-							<xsl:value-of select="$type"/>: <xsl:value-of select="."/>
+							<xsl:value-of select="$type"/>: <xsl:value-of select="."/>
 						</xsl:when>
 						<xsl:when test="contains ('isbn issn uri doi lccn uri', $type)">
-							<xsl:value-of select="$type"/>: <xsl:value-of select="."/>
+							<xsl:value-of select="$type"/>: <xsl:value-of select="."/>
 						</xsl:when>
 					</xsl:choose>
 				</xsl:when>
