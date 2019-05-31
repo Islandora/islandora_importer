@@ -9,7 +9,7 @@
  * Deprecate the included mods_to_dc.xsl file and repoint to Islandora module.
  */
 function islandora_importer_update_7100() {
-  return t('The mods_to_dc.xsl transform file has been moved to the Islandora module as of Islandora 7.x-1.13. 
-  All functions relating to the MODS-to-DC transform should use that file. The copy of mods_to_dc.xsl in this
-  module will be removed in the next release.');
+  return t('The mods_to_dc.xsl transform file has been moved to the Islandora module as of Islandora 7.x-1.13.
+  No action is required for most sites, but any custom modules referring to this file should be pointed to its new location in the Islandora module.
+  This copy of mods_to_dc.xsl will be removed in the next release.');
 }
