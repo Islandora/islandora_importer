@@ -320,7 +320,7 @@ abstract class IslandoraImportObject implements IslandoraImportObjectInterface {
   public function getDC() {
     if ($this->dc === NULL) {
       $new_dc = static::runXSLTransform(array(
-                  'xsl' => drupal_get_path('module', 'islandora_importer') . '/xsl/mods_to_dc.xsl',
+                  'xsl' => drupal_get_path('module', 'islandora') . '/xml/transforms/mods_to_dc.xsl',
                   'input' => $this->getMODS(),
                 ));
       if ($new_dc) {

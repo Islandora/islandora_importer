@@ -8,11 +8,10 @@ Made primarily for ingesting objects described by MODS and DC, and currently imp
 
 This module requires the following modules/libraries:
 
-* [Islandora](https://github.com/islandora/islandora)
-* [Tuque](https://github.com/islandora/tuque)
-* [Islandora Basic Collection](https://github.com/islandora/islandora_solution_pack_collection)
-* [Islandora Batch](https://github.com/islandora/islandora_batch)
-
+* [Islandora](https://github.com/Islandora/islandora)
+* [Tuque](https://github.com/Islandora/tuque)
+* [Islandora Basic Collection](https://github.com/Islandora/islandora_solution_pack_collection)
+* [Islandora Batch](https://github.com/Islandora/islandora_batch)
 ## Installation
 
 Install as usual, see [this](https://drupal.org/documentation/install/modules-themes/modules-7) for further information.

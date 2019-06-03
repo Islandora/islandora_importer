@@ -1,0 +1,15 @@
+<?php
+/**
+ * Installation hooks for islandora_importer
+ */
+
+/**
+ * Implements hook_update().
+ *
+ * Deprecate the included mods_to_dc.xsl file and repoint to Islandora module.
+ */
+function islandora_importer_update_7100() {
+  return t('The mods_to_dc.xsl transform file has been moved to the Islandora module as of Islandora 7.x-1.13.
+  No action is required for most sites, but any custom modules referring to this file should be pointed to its new location in the Islandora module.
+  This copy of mods_to_dc.xsl will be removed in the next release.');
+}
