@@ -49,13 +49,11 @@ before_install:
   - cd $HOME
   - git clone -b 7.x git://github.com/Islandora/islandora.git
   - git clone -b 7.x git://github.com/Islandora/islandora_batch.git
-  - git clone -b 7.x git://github.com/Islandora/islandora_marcxml.git
   - export ISLANDORA_DIR=$HOME/islandora
   - $HOME/islandora/tests/scripts/travis_setup.sh
   - cd $HOME/drupal-*
   - ln -s $TRAVIS_BUILD_DIR sites/all/modules/islandora_importer
   - ln -s $HOME/islandora_batch sites/all/modules/islandora_batch
-  - ln -s $HOME/islandora_marcxml sites/all/modules/islandora_marcxml
   - drush en --yes islandora_importer
 before_script:
   # Mysql might time out for long tests, increase the wait timeout.
