@@ -12,7 +12,6 @@ This module requires the following modules/libraries:
 * [Tuque](https://github.com/Islandora/tuque)
 * [Islandora Basic Collection](https://github.com/Islandora/islandora_solution_pack_collection)
 * [Islandora Batch](https://github.com/Islandora/islandora_batch)
-* [Islandora Marcxml](https://github.com/Islandora/islandora_marcxml)
 
 ## Installation
 

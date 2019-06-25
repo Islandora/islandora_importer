@@ -10,6 +10,7 @@ This module requires the following modules/libraries:
 
 * [Islandora Importer](https://github.com/Islandora/islandora_importer)
 * [Islandora Basic Collection](https://github.com/Islandora/islandora_solution_pack_collection)
+* [Islandora MARCXML](https://github.com/Islandora/islandora_marcxml)
 
 ## Installation
 
