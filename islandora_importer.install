@@ -13,12 +13,3 @@ function islandora_importer_update_7100() {
   No action is required for most sites, but any custom modules referring to this file should be pointed to its new location in the Islandora module.
   This copy of mods_to_dc.xsl will be removed in the next release.');
 }
-/**
- * Deprecate the included marcxml-to-mods file and repoint to Islandora Marcxml.
- */
-
-function islandora_importer_update_7200() {
-  return t('The MARCXML-to-MODS transform file has been moved to the Islandora MARCXML module as of Islandora 7.x-1.13.
-  No action is required for most sites, but any custom modules referring to this file should be pointed to its new location.
-  This copy of the MARCXML-to-MODS XSL will be removed in the next release.');
-}
