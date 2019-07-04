@@ -6,8 +6,6 @@
  */
 
 /**
- * Implements hook_update().
- *
  * Deprecate the included marcxml-to-mods file and repoint to Islandora Marcxml.
  */
 function zip_importer_update_7100() {
@@ -17,8 +15,6 @@ function zip_importer_update_7100() {
 }
 
 /**
- * Implements hook_update().
- *
  * Un-deprecate the marcxml-to-mods file and repointing to Islandora Marcxml.
  */
 function zip_importer_update_7101() {
