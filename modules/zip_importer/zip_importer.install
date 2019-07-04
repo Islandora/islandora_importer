@@ -6,17 +6,8 @@
  */
 
 /**
- * Deprecate the included marcxml-to-mods file and repoint to Islandora Marcxml.
- */
-function zip_importer_update_7100() {
-  return t('Please disregard this update.');
-}
-
-/**
  * Un-deprecate the marcxml-to-mods file and repointing to Islandora Marcxml.
  */
 function zip_importer_update_7101() {
-  return t('The MARCXML-to-MODS transform file was moved to the Islandora MARCXML module as of update 7100 of this module.
-  That change has been reversed.
-  You may want to disable the Islandora MARCXML module if you installed it because of that update.');
+  return t('For a short time this module required the Islandora MARCXML module. That requirement has been removed. You may want to disable the Islandora MARCXML module if you installed it to meet that requirement.');
 }
