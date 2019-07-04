@@ -12,7 +12,6 @@ This module requires the following modules/libraries:
 * [Tuque](https://github.com/Islandora/tuque)
 * [Islandora Basic Collection](https://github.com/Islandora/islandora_solution_pack_collection)
 * [Islandora Batch](https://github.com/Islandora/islandora_batch)
-
 ## Installation
 
 Install as usual, see [this](https://drupal.org/documentation/install/modules-themes/modules-7) for further information.
