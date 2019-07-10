@@ -192,11 +192,9 @@ class ZipBatchImportObject extends IslandoraImportObject {
     if (self::$transformPath == '') {
 
       self::$transformPath = drupal_get_path('module', 'zip_importer') . '/xsl';
-      $marcxml_path = drupal_get_path('module', 'islandora_marcxml') . '/xsl';
-      module_load_include('inc', 'islandora_marcxml', 'admin.form');
-      $marcxml_file = variable_get('islandora_marcxml_select_marc_to_mods_xsl', 'MARC21slim2MODS3-6.xsl');
+
       if (self::$MARC2MODS == '') {
-        self::$MARC2MODS = $marcxml_path . "/" . $marcxml_file;
+        self::$MARC2MODS = self::$transformPath . "/MARC21slim2MODS3-6.xsl";
       }
 
       if (self::$DC2MODS == '') {
