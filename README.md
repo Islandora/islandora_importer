@@ -42,9 +42,8 @@ A. It doesn't. A POLICY datastream will not be applied to objects ingested via Z
 
 ## Maintainers/Sponsors
 
-Current maintainers:
+Current maintainer:
 
-* [Adam Vessey](https://github.com/adam-vessey)
 * [Diego Pino](https://github.com/DiegoPino)
 
 ## Development
